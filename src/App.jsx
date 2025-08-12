@@ -13,6 +13,25 @@ function formatDateTime(ms) {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
+function formatTimeOnly(ms) {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const pad = (n) => String(n).padStart(2, "0");
+  const hh = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${hh}:${mi}`;
+}
+
+function formatDateOnly(ms) {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function parseDateTime(val) {
   const ms = Date.parse(val.replace(" ", "T"));
   return isNaN(ms) ? null : ms;
@@ -26,6 +45,7 @@ export default function App() {
   const [earnings, setEarnings] = useState(0);
   const [accumulatedSeconds, setAccumulatedSeconds] = useState(0);
   const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
   const [isEditingCounter, setIsEditingCounter] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [title, setTitle] = useState("PayTracker");
@@ -42,22 +62,67 @@ export default function App() {
 
   // Parallax mouse movement effect
   useEffect(() => {
+    let animationFrameId;
+
     const handleMouseMove = (e) => {
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
+        // Cancel previous animation frame for smoother performance
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
 
-        const mouseX = e.clientX - centerX;
-        const mouseY = e.clientY - centerY;
+        animationFrameId = requestAnimationFrame(() => {
+          const rect = containerRef.current.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
 
-        setMousePosition({ x: mouseX, y: mouseY });
+          const mouseX = e.clientX - centerX;
+          const mouseY = e.clientY - centerY;
+
+          setMousePosition({ x: mouseX, y: mouseY });
+        });
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
   }, []);
+
+  // Keyboard event listener for spacebar
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only trigger if spacebar is pressed and not typing in an input field
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault(); // Prevent page scrolling
+        if (hourlyRate) {
+          toggleTimer();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hourlyRate]);
+
+  // Auto-focus title when editing starts
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      // Place cursor at the end of the text
+      const range = document.createRange();
+      const selection = window.getSelection();
+      range.selectNodeContents(titleInputRef.current);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }, [isEditingTitle]);
 
   // Timer functions
   const startTimer = (rateOverride) => {
@@ -66,6 +131,7 @@ export default function App() {
     if (!startTime) setStartTime(Date.now());
     if (startTimeRef.current === null) startTimeRef.current = performance.now();
     setIsRunning(true);
+    setEndTime(null);
   };
 
   const pauseTimer = () => {
@@ -77,6 +143,7 @@ export default function App() {
       startTimeRef.current = null;
     }
     setIsRunning(false);
+    setEndTime(Date.now());
   };
 
   const toggleTimer = () => {
@@ -127,6 +194,7 @@ export default function App() {
       setEarnings(0);
       setAccumulatedSeconds(0);
       setStartTime(Date.now());
+      setEndTime(null);
       startTimeRef.current = null;
       startTimer(parsed);
     }
@@ -138,6 +206,7 @@ export default function App() {
       setStartTime(now);
       setEarnings(0);
       setAccumulatedSeconds(0);
+      setEndTime(null);
       if (isRunning) {
         startTimeRef.current = performance.now();
       } else {
@@ -187,14 +256,62 @@ export default function App() {
     })()
     : "";
 
-  // Transform calculations
+  // Time display logic
+  const shouldShowDate = () => {
+    if (!startTime) return false;
+
+    if (isRunning) {
+      const startDate = formatDateOnly(startTime);
+      const nowDate = formatDateOnly(Date.now());
+      return startDate !== nowDate;
+    } else {
+      if (!endTime) return false;
+      const startDate = formatDateOnly(startTime);
+      const endDate = formatDateOnly(endTime);
+      return startDate !== endDate;
+    }
+  };
+
+  const getTimeDisplay = () => {
+    if (!startTime) return null;
+
+    if (shouldShowDate()) {
+      if (isRunning) {
+        return {
+          line1: `${formatDateOnly(startTime)} ${formatTimeOnly(startTime)}`,
+          line2: null
+        };
+      } else {
+        return {
+          line1: `${formatDateOnly(startTime)} ${formatTimeOnly(startTime)}`,
+          line2: `${formatDateOnly(endTime)} ${formatTimeOnly(endTime)}`
+        };
+      }
+    } else {
+      if (isRunning) {
+        return {
+          line1: formatTimeOnly(startTime),
+          line2: null
+        };
+      } else {
+        return {
+          line1: `${formatTimeOnly(startTime)} – ${formatTimeOnly(endTime)}`,
+          line2: null
+        };
+      }
+    }
+  };
+
+  // Transform calculations - optimized for smoother parallax
   const panelTransform = {
-    transform: `translate3d(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px, 0) rotateX(${mousePosition.y * 0.01}deg) rotateY(${mousePosition.x * 0.01}deg)`,
+    transform: `translate3d(${mousePosition.x * 0.01}px, ${mousePosition.y * 0.01}px, 0) rotateX(${mousePosition.y * 0.005}deg) rotateY(${mousePosition.x * 0.005}deg)`,
   };
 
   const backgroundTransform = {
-    transform: `translate3d(${mousePosition.x * -0.01}px, ${mousePosition.y * -0.01}px, 0)`,
+    transform: `translate3d(${mousePosition.x * -0.005}px, ${mousePosition.y * -0.005}px, 0)`,
   };
+
+  const timeDisplay = getTimeDisplay();
 
   return (
     <div
@@ -209,35 +326,32 @@ export default function App() {
           style={panelTransform}
         >
           {/* Panel content */}
-          <div className="p-10 h-full flex flex-col justify-between">
+          <div className="p-5 h-full flex flex-col justify-between">
             {/* Header */}
             <div className="text-center mb-8">
-              {isEditingTitle ? (
-                <input
-                  ref={titleInputRef}
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  onKeyDown={handleTitleSubmit}
-                  onBlur={handleTitleBlur}
-                  className="text-gray-800 font-bold text-xl tracking-wide px-6 text-center bg-transparent border-none outline-none"
-                  autoFocus
-                />
-              ) : (
-                <h1
-                  className="text-gray-800 font-bold text-xl tracking-wide px-6 cursor-pointer hover:text-gray-600 transition-colors"
-                  onClick={() => setIsEditingTitle(true)}
-                >
-                  {title}
-                </h1>
-              )}
+              <h1
+                ref={titleInputRef}
+                contentEditable={isEditingTitle}
+                suppressContentEditableWarning
+                onInput={(e) => setTitle(e.currentTarget.textContent)}
+                onKeyDown={handleTitleSubmit}
+                onBlur={handleTitleBlur}
+                onClick={() => !isEditingTitle && setIsEditingTitle(true)}
+                className={`text-gray-800 font-bold text-xl tracking-wide px-6 transition-colors ${isEditingTitle
+                  ? 'cursor-text outline-none'
+                  : 'cursor-pointer hover:text-gray-600'
+                  }`}
+                style={{ outline: isEditingTitle ? 'none' : undefined }}
+              >
+                {title}
+              </h1>
             </div>
 
             {/* Main content area */}
             <div className="flex-1 flex flex-col justify-center">
               {/* Rate input or earnings display */}
               {!isRunning && !hourlyRate ? (
-                <div className="mb-8 px-6 relative">
+                <div className="mb-8 px-5 relative">
                   <input
                     type="number"
                     step="0.01"
@@ -249,45 +363,52 @@ export default function App() {
                   />
                 </div>
               ) : (
-                <div className="text-center mb-8 px-6">
-                  <div className="flex items-center justify-center space-x-8">
-                    <div className="text-2xl text-gray-800 font-semibold earnings-display">
-                      ${earnings.toFixed(5)}
-                    </div>
-                    <button
-                      onClick={toggleTimer}
-                      className="control-button p-3 rounded-full text-gray-800 hover:scale-110 transition-transform"
-                      disabled={!hourlyRate}
-                    >
-                      {isRunning ? (
-                        <div className="pause-icon"></div>
-                      ) : (
-                        <div className="play-icon"></div>
-                      )}
-                    </button>
+                <div className="text-center mb-8 px-5 relative">
+                  {/* Earnings display - centered */}
+                  <div className="text-2xl text-gray-800 font-semibold earnings-display mb-4">
+                    ${earnings.toFixed(5)}
                   </div>
+
+                  {/* Play/Pause button - absolutely positioned */}
+                  <button
+                    onClick={toggleTimer}
+                    className="control-button p-4 rounded-full text-gray-800 hover:scale-110 transition-transform absolute"
+                    style={{
+                      right: '20px',
+                      top: '50%',
+                      transform: 'translateY(-50%)'
+                    }}
+                    disabled={!hourlyRate}
+                  >
+                    {isRunning ? (
+                      <div className="pause-icon"></div>
+                    ) : (
+                      <div className="play-icon"></div>
+                    )}
+                  </button>
                 </div>
               )}
 
               {/* Rate display */}
               {hourlyRate && (
-                <div className="text-center mb-6 px-6">
+                <div className="text-center mb-6 px-5">
                   <div className="text-sm text-gray-700">
                     ${hourlyRate}/hr
                   </div>
                 </div>
               )}
 
-              {/* Start time information */}
-              {startTime && (
-                <div className="text-center px-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-gray-700">Start Time</span>
-                    <span className="text-xs text-gray-600">{timeSinceStart}</span>
+              {/* Time information */}
+              {timeDisplay && (
+                <div className="text-center px-5">
+                  <div className="text-xs text-gray-600 mb-1">
+                    {timeDisplay.line1}
                   </div>
-                  <div className="text-xs text-gray-600">
-                    {formatDateTime(startTime).replace('T', ' ')}
-                  </div>
+                  {timeDisplay.line2 && (
+                    <div className="text-xs text-gray-600">
+                      {timeDisplay.line2}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 // Utility functions
 function formatDateTime(ms) {
@@ -60,6 +60,33 @@ export default function App() {
   // Computed values
   const dollarsPerSecond = hourlyRate ? hourlyRate / 3600 : 0;
 
+  // Timer functions - defined before useEffect that references them
+  const startTimer = useCallback((rateOverride) => {
+    const rate = rateOverride ?? hourlyRate;
+    if (!rate || rate <= 0) return;
+    if (!startTime) setStartTime(Date.now());
+    if (startTimeRef.current === null) startTimeRef.current = performance.now();
+    setIsRunning(true);
+    setEndTime(null);
+  }, [hourlyRate, startTime]);
+
+  const pauseTimer = useCallback(() => {
+    if (!isRunning) return;
+    if (startTimeRef.current !== null) {
+      const now = performance.now();
+      const elapsed = (now - startTimeRef.current) / 1000;
+      setAccumulatedSeconds((prev) => prev + elapsed);
+      startTimeRef.current = null;
+    }
+    setIsRunning(false);
+    setEndTime(Date.now());
+  }, [isRunning]);
+
+  const toggleTimer = useCallback(() => {
+    if (isRunning) pauseTimer();
+    else startTimer();
+  }, [isRunning, pauseTimer, startTimer]);
+
   // Parallax mouse movement effect
   useEffect(() => {
     let animationFrameId;
@@ -97,18 +124,22 @@ export default function App() {
   // Keyboard event listener for spacebar
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Only trigger if spacebar is pressed and not typing in an input field
-      if (e.code === 'Space' && e.target === document.body) {
-        e.preventDefault(); // Prevent page scrolling
-        if (hourlyRate) {
-          toggleTimer();
+      // Only trigger if spacebar is pressed and we have an hourly rate
+      if (e.code === 'Space' && hourlyRate) {
+        // If we're editing the title, don't prevent default (allow normal spacebar behavior)
+        if (isEditingTitle) {
+          return;
         }
+
+        // For timer control, prevent default to avoid page scrolling
+        e.preventDefault();
+        toggleTimer();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hourlyRate]);
+  }, [hourlyRate, isEditingTitle, toggleTimer]);
 
   // Auto-focus title when editing starts
   useEffect(() => {
@@ -123,33 +154,6 @@ export default function App() {
       selection.addRange(range);
     }
   }, [isEditingTitle]);
-
-  // Timer functions
-  const startTimer = (rateOverride) => {
-    const rate = rateOverride ?? hourlyRate;
-    if (!rate || rate <= 0) return;
-    if (!startTime) setStartTime(Date.now());
-    if (startTimeRef.current === null) startTimeRef.current = performance.now();
-    setIsRunning(true);
-    setEndTime(null);
-  };
-
-  const pauseTimer = () => {
-    if (!isRunning) return;
-    if (startTimeRef.current !== null) {
-      const now = performance.now();
-      const elapsed = (now - startTimeRef.current) / 1000;
-      setAccumulatedSeconds((prev) => prev + elapsed);
-      startTimeRef.current = null;
-    }
-    setIsRunning(false);
-    setEndTime(Date.now());
-  };
-
-  const toggleTimer = () => {
-    if (isRunning) pauseTimer();
-    else startTimer();
-  };
 
   // Timer effect
   useEffect(() => {
@@ -231,18 +235,6 @@ export default function App() {
       startTimeRef.current = null;
     }
     setEarnings(totalSecondsWanted * dollarsPerSecond);
-  };
-
-  const handleTitleSubmit = (e) => {
-    if (e.key === "Enter") {
-      setIsEditingTitle(false);
-    } else if (e.key === "Escape") {
-      setIsEditingTitle(false);
-    }
-  };
-
-  const handleTitleBlur = () => {
-    setIsEditingTitle(false);
   };
 
   // Computed values
@@ -334,8 +326,17 @@ export default function App() {
                 contentEditable={isEditingTitle}
                 suppressContentEditableWarning
                 onInput={(e) => setTitle(e.currentTarget.textContent)}
-                onKeyDown={handleTitleSubmit}
-                onBlur={handleTitleBlur}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setIsEditingTitle(false);
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    setIsEditingTitle(false);
+                  }
+                  // Allow spacebar to work normally during title editing
+                }}
+                onBlur={() => setIsEditingTitle(false)}
                 onClick={() => !isEditingTitle && setIsEditingTitle(true)}
                 className={`text-gray-800 font-bold text-xl tracking-wide px-6 transition-colors ${isEditingTitle
                   ? 'cursor-text outline-none'

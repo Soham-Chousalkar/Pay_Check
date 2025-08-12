@@ -4,7 +4,6 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        dseg: ['"DSEG7 Classic"', "monospace"],
         sans: ['Ubuntu', 'sans-serif'],
       },
     },

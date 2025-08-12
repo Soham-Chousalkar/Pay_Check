@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-function toLocalInputValue(ms) {
+// Utility functions
+function formatDateTime(ms) {
   if (!ms) return "";
   const d = new Date(ms);
   const pad = (n) => String(n).padStart(2, "0");
@@ -12,28 +13,31 @@ function toLocalInputValue(ms) {
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
-function fromLocalInputValue(val) {
+function parseDateTime(val) {
   const ms = Date.parse(val.replace(" ", "T"));
   return isNaN(ms) ? null : ms;
 }
 
 export default function App() {
-  const [running, setRunning] = useState(false);
+  // State management
+  const [isRunning, setIsRunning] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(null);
-  const [inputValue, setInputValue] = useState("");
+  const [rateInput, setRateInput] = useState("");
   const [earnings, setEarnings] = useState(0);
-  const [accumulatedSec, setAccumulatedSec] = useState(0);
-  const [startTimeMs, setStartTimeMs] = useState(null);
-  const [counterEdit, setCounterEdit] = useState(false);
+  const [accumulatedSeconds, setAccumulatedSeconds] = useState(0);
+  const [startTime, setStartTime] = useState(null);
+  const [isEditingCounter, setIsEditingCounter] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [title, setTitle] = useState("PayTracker");
-  const [titleEditing, setTitleEditing] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
-  const startTsRef = useRef(null);
+  // Refs
+  const startTimeRef = useRef(null);
   const timerRef = useRef(null);
   const containerRef = useRef(null);
   const titleInputRef = useRef(null);
 
+  // Computed values
   const dollarsPerSecond = hourlyRate ? hourlyRate / 3600 : 0;
 
   // Parallax mouse movement effect
@@ -55,32 +59,34 @@ export default function App() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  const start = (rateOverride) => {
+  // Timer functions
+  const startTimer = (rateOverride) => {
     const rate = rateOverride ?? hourlyRate;
     if (!rate || rate <= 0) return;
-    if (!startTimeMs) setStartTimeMs(Date.now());
-    if (startTsRef.current === null) startTsRef.current = performance.now();
-    setRunning(true);
+    if (!startTime) setStartTime(Date.now());
+    if (startTimeRef.current === null) startTimeRef.current = performance.now();
+    setIsRunning(true);
   };
 
-  const pause = () => {
-    if (!running) return;
-    if (startTsRef.current !== null) {
+  const pauseTimer = () => {
+    if (!isRunning) return;
+    if (startTimeRef.current !== null) {
       const now = performance.now();
-      const elapsed = (now - startTsRef.current) / 1000;
-      setAccumulatedSec((prev) => prev + elapsed);
-      startTsRef.current = null;
+      const elapsed = (now - startTimeRef.current) / 1000;
+      setAccumulatedSeconds((prev) => prev + elapsed);
+      startTimeRef.current = null;
     }
-    setRunning(false);
+    setIsRunning(false);
   };
 
-  const toggleStartPause = () => {
-    if (running) pause();
-    else start();
+  const toggleTimer = () => {
+    if (isRunning) pauseTimer();
+    else startTimer();
   };
 
+  // Timer effect
   useEffect(() => {
-    if (!running) {
+    if (!isRunning) {
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -89,9 +95,9 @@ export default function App() {
     }
     timerRef.current = window.setInterval(() => {
       const now = performance.now();
-      const live = startTsRef.current ? (now - startTsRef.current) / 1000 : 0;
-      const totalSec = accumulatedSec + live;
-      setEarnings(totalSec * dollarsPerSecond);
+      const live = startTimeRef.current ? (now - startTimeRef.current) / 1000 : 0;
+      const totalSeconds = accumulatedSeconds + live;
+      setEarnings(totalSeconds * dollarsPerSecond);
     }, 100);
 
     return () => {
@@ -100,65 +106,80 @@ export default function App() {
         timerRef.current = null;
       }
     };
-  }, [running, accumulatedSec, dollarsPerSecond]);
+  }, [isRunning, accumulatedSeconds, dollarsPerSecond]);
 
+  // Earnings update effect
   useEffect(() => {
     if (hourlyRate != null) {
       const now = performance.now();
-      const live = startTsRef.current ? (now - startTsRef.current) / 1000 : 0;
-      const totalSec = accumulatedSec + live;
-      setEarnings(totalSec * (hourlyRate / 3600));
+      const live = startTimeRef.current ? (now - startTimeRef.current) / 1000 : 0;
+      const totalSeconds = accumulatedSeconds + live;
+      setEarnings(totalSeconds * (hourlyRate / 3600));
     }
-  }, [hourlyRate]); // eslint-disable-line
+  }, [hourlyRate, accumulatedSeconds]);
 
-  const onRateKeyDown = (e) => {
+  // Event handlers
+  const handleRateSubmit = (e) => {
     if (e.key === "Enter") {
-      const parsed = parseFloat(inputValue);
+      const parsed = parseFloat(rateInput);
       if (!isFinite(parsed) || parsed <= 0) return;
       setHourlyRate(parsed);
       setEarnings(0);
-      setAccumulatedSec(0);
-      setStartTimeMs(Date.now());
-      startTsRef.current = null;
-      start(parsed);
+      setAccumulatedSeconds(0);
+      setStartTime(Date.now());
+      startTimeRef.current = null;
+      startTimer(parsed);
     }
   };
 
-  const onCounterKeyDown = (e) => {
+  const handleCounterEdit = (e) => {
     if (e.key === "Enter") {
       const now = Date.now();
-      setStartTimeMs(now);
+      setStartTime(now);
       setEarnings(0);
-      setAccumulatedSec(0);
-      if (running) {
-        startTsRef.current = performance.now();
+      setAccumulatedSeconds(0);
+      if (isRunning) {
+        startTimeRef.current = performance.now();
       } else {
-        startTsRef.current = null;
+        startTimeRef.current = null;
       }
-      setCounterEdit(false);
+      setIsEditingCounter(false);
     } else if (e.key === "Escape") {
-      setCounterEdit(false);
+      setIsEditingCounter(false);
     }
   };
 
-  const onStartTimeChange = (val) => {
-    const ms = fromLocalInputValue(val);
+  const handleStartTimeChange = (val) => {
+    const ms = parseDateTime(val);
     if (!ms) return;
-    setStartTimeMs(ms);
+    setStartTime(ms);
     const nowMs = Date.now();
-    const totalSecWanted = Math.max(0, (nowMs - ms) / 1000);
-    setAccumulatedSec(totalSecWanted);
-    if (running) {
-      startTsRef.current = performance.now();
+    const totalSecondsWanted = Math.max(0, (nowMs - ms) / 1000);
+    setAccumulatedSeconds(totalSecondsWanted);
+    if (isRunning) {
+      startTimeRef.current = performance.now();
     } else {
-      startTsRef.current = null;
+      startTimeRef.current = null;
     }
-    setEarnings(totalSecWanted * dollarsPerSecond);
+    setEarnings(totalSecondsWanted * dollarsPerSecond);
   };
 
-  const sinceText = startTimeMs
+  const handleTitleSubmit = (e) => {
+    if (e.key === "Enter") {
+      setIsEditingTitle(false);
+    } else if (e.key === "Escape") {
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleTitleBlur = () => {
+    setIsEditingTitle(false);
+  };
+
+  // Computed values
+  const timeSinceStart = startTime
     ? (() => {
-      const diff = Date.now() - startTimeMs;
+      const diff = Date.now() - startTime;
       const minutes = Math.max(0, Math.floor(diff / 60000));
       const hours = Math.floor(minutes / 60);
       const mins = minutes % 60;
@@ -166,19 +187,7 @@ export default function App() {
     })()
     : "";
 
-  const handleTitleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      setTitleEditing(false);
-    } else if (e.key === "Escape") {
-      setTitleEditing(false);
-    }
-  };
-
-  const handleTitleBlur = () => {
-    setTitleEditing(false);
-  };
-
-  // Calculate parallax transforms
+  // Transform calculations
   const panelTransform = {
     transform: `translate3d(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px, 0) rotateX(${mousePosition.y * 0.01}deg) rotateY(${mousePosition.x * 0.01}deg)`,
   };
@@ -190,26 +199,26 @@ export default function App() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen paper-texture parallax-container overflow-hidden relative"
+      className="min-h-screen paper-background parallax-container overflow-hidden relative"
       style={backgroundTransform}
     >
-      {/* Main neumorphic panel */}
+      {/* Main container */}
       <div className="min-h-screen flex items-center justify-center p-6">
         <div
-          className="neumorphic-panel smooth-transition relative mx-auto"
+          className="main-panel smooth-transition relative mx-auto"
           style={panelTransform}
         >
           {/* Panel content */}
           <div className="p-10 h-full flex flex-col justify-between">
             {/* Header */}
             <div className="text-center mb-8">
-              {titleEditing ? (
+              {isEditingTitle ? (
                 <input
                   ref={titleInputRef}
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  onKeyDown={handleTitleKeyDown}
+                  onKeyDown={handleTitleSubmit}
                   onBlur={handleTitleBlur}
                   className="text-gray-800 font-bold text-xl tracking-wide px-6 text-center bg-transparent border-none outline-none"
                   autoFocus
@@ -217,7 +226,7 @@ export default function App() {
               ) : (
                 <h1
                   className="text-gray-800 font-bold text-xl tracking-wide px-6 cursor-pointer hover:text-gray-600 transition-colors"
-                  onClick={() => setTitleEditing(true)}
+                  onClick={() => setIsEditingTitle(true)}
                 >
                   {title}
                 </h1>
@@ -226,32 +235,31 @@ export default function App() {
 
             {/* Main content area */}
             <div className="flex-1 flex flex-col justify-center">
-              {/* Rate input field */}
-              {!running && !hourlyRate ? (
+              {/* Rate input or earnings display */}
+              {!isRunning && !hourlyRate ? (
                 <div className="mb-8 px-6 relative">
                   <input
                     type="number"
                     step="0.01"
                     placeholder="Enter hourly rate"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={onRateKeyDown}
+                    value={rateInput}
+                    onChange={(e) => setRateInput(e.target.value)}
+                    onKeyDown={handleRateSubmit}
                     className="w-full text-center text-lg text-gray-500 bg-transparent border-none outline-none placeholder-gray-500"
                   />
                 </div>
               ) : (
-                /* Earnings display */
                 <div className="text-center mb-8 px-6">
                   <div className="flex items-center justify-center space-x-8">
-                    <div className="text-2xl text-gray-800 font-semibold">
+                    <div className="text-2xl text-gray-800 font-semibold earnings-display">
                       ${earnings.toFixed(5)}
                     </div>
                     <button
-                      onClick={toggleStartPause}
-                      className="neumorphic-button p-3 rounded-full text-gray-800 hover:scale-110 transition-transform"
+                      onClick={toggleTimer}
+                      className="control-button p-3 rounded-full text-gray-800 hover:scale-110 transition-transform"
                       disabled={!hourlyRate}
                     >
-                      {running ? (
+                      {isRunning ? (
                         <div className="pause-icon"></div>
                       ) : (
                         <div className="play-icon"></div>
@@ -270,15 +278,15 @@ export default function App() {
                 </div>
               )}
 
-              {/* Start Time section - text only */}
-              {startTimeMs && (
+              {/* Start time information */}
+              {startTime && (
                 <div className="text-center px-6">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs text-gray-700">Start Time</span>
-                    <span className="text-xs text-gray-600">{sinceText}</span>
+                    <span className="text-xs text-gray-600">{timeSinceStart}</span>
                   </div>
                   <div className="text-xs text-gray-600">
-                    {toLocalInputValue(startTimeMs).replace('T', ' ')}
+                    {formatDateTime(startTime).replace('T', ' ')}
                   </div>
                 </div>
               )}

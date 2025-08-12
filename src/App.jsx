@@ -200,9 +200,9 @@ export default function App() {
           style={panelTransform}
         >
           {/* Panel content */}
-          <div className="p-8 h-full flex flex-col justify-between">
+          <div className="p-10 h-full flex flex-col justify-between">
             {/* Header */}
-            <div className="text-center mb-6">
+            <div className="text-center mb-8">
               {titleEditing ? (
                 <input
                   ref={titleInputRef}
@@ -211,12 +211,12 @@ export default function App() {
                   onChange={(e) => setTitle(e.target.value)}
                   onKeyDown={handleTitleKeyDown}
                   onBlur={handleTitleBlur}
-                  className="text-gray-800 font-bold text-xl tracking-wide px-4 text-center bg-transparent border-none outline-none"
+                  className="text-gray-800 font-bold text-xl tracking-wide px-6 text-center bg-transparent border-none outline-none"
                   autoFocus
                 />
               ) : (
                 <h1
-                  className="text-gray-800 font-bold text-xl tracking-wide px-4 cursor-pointer hover:text-gray-600 transition-colors"
+                  className="text-gray-800 font-bold text-xl tracking-wide px-6 cursor-pointer hover:text-gray-600 transition-colors"
                   onClick={() => setTitleEditing(true)}
                 >
                   {title}
@@ -226,9 +226,9 @@ export default function App() {
 
             {/* Main content area */}
             <div className="flex-1 flex flex-col justify-center">
-              {/* Digital counter / rate input */}
+              {/* Rate input field */}
               {!running && !hourlyRate ? (
-                <div className="mb-6 px-4">
+                <div className="mb-8 px-6 relative">
                   <input
                     type="number"
                     step="0.01"
@@ -236,50 +236,50 @@ export default function App() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={onRateKeyDown}
-                    className="neumorphic-inset w-full rounded-xl px-6 py-4 text-center text-lg text-gray-800 placeholder-gray-500 focus:outline-none"
+                    className="w-full text-center text-lg text-gray-500 bg-transparent border-none outline-none placeholder-gray-500"
                   />
                 </div>
               ) : (
-                <div className="mb-6 px-4">
-                  <input
-                    value={counterEdit ? "" : `$${earnings.toFixed(5)}`}
-                    onFocus={() => setCounterEdit(true)}
-                    onBlur={() => setCounterEdit(false)}
-                    onKeyDown={onCounterKeyDown}
-                    placeholder="Click to edit"
-                    className="digital neumorphic-inset w-full rounded-xl px-6 py-4 text-center text-2xl text-gray-800 placeholder-gray-500 focus:outline-none"
-                  />
+                /* Earnings display */
+                <div className="text-center mb-8 px-6">
+                  <div className="flex items-center justify-center space-x-8">
+                    <div className="text-2xl text-gray-800 font-semibold">
+                      ${earnings.toFixed(5)}
+                    </div>
+                    <button
+                      onClick={toggleStartPause}
+                      className="neumorphic-button p-3 rounded-full text-gray-800 hover:scale-110 transition-transform"
+                      disabled={!hourlyRate}
+                    >
+                      {running ? (
+                        <div className="pause-icon"></div>
+                      ) : (
+                        <div className="play-icon"></div>
+                      )}
+                    </button>
+                  </div>
                 </div>
               )}
 
-              {/* Controls */}
-              <div className="flex items-center justify-between mb-6 px-4">
-                <div className="text-sm text-gray-800 px-4 py-2">
-                  {hourlyRate ? `$${hourlyRate}/hr` : "Enter rate"}
-                </div>
-                <button
-                  onClick={toggleStartPause}
-                  className={`neumorphic-button px-6 py-3 rounded-lg text-gray-800 font-medium text-sm ${running ? "text-orange-700" : "text-green-700"
-                    }`}
-                  disabled={!hourlyRate && !inputValue}
-                >
-                  {running ? "Pause" : "Start"}
-                </button>
-              </div>
-
-              {/* Start Time section - compact */}
-              {startTimeMs && (
-                <div className="neumorphic-inset rounded-lg p-4 mx-4">
-                  <div className="flex items-center justify-between mb-3 px-2">
-                    <label className="text-xs text-gray-800">Start Time</label>
-                    <span className="text-xs text-gray-700">{sinceText}</span>
+              {/* Rate display */}
+              {hourlyRate && (
+                <div className="text-center mb-6 px-6">
+                  <div className="text-sm text-gray-700">
+                    ${hourlyRate}/hr
                   </div>
-                  <input
-                    type="datetime-local"
-                    value={toLocalInputValue(startTimeMs)}
-                    onChange={(e) => onStartTimeChange(e.target.value)}
-                    className="w-full bg-transparent border border-gray-300 rounded px-3 py-2 text-xs text-gray-800 focus:outline-none"
-                  />
+                </div>
+              )}
+
+              {/* Start Time section - text only */}
+              {startTimeMs && (
+                <div className="text-center px-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs text-gray-700">Start Time</span>
+                    <span className="text-xs text-gray-600">{sinceText}</span>
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    {toLocalInputValue(startTimeMs).replace('T', ' ')}
+                  </div>
                 </div>
               )}
             </div>

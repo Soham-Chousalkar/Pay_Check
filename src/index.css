@@ -21,24 +21,23 @@ body {
   background-repeat: no-repeat;
 }
 
-/* Neumorphic panel - 2" x 3" landscape proportions with 50% transparency */
+/* Neumorphic panel - 2" x 3" landscape proportions with seamless design */
 .neumorphic-panel {
   width: 300px;
   /* 3 inches at 100px/inch */
   height: 200px;
   /* 2 inches at 100px/inch */
-  background: rgba(240, 240, 240, 0.5);
-  /* 50% transparency */
+  background: rgba(240, 240, 240, 0.1);
+  /* Very subtle background */
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border-radius: 20px;
   box-shadow:
-    20px 20px 60px rgba(0, 0, 0, 0.25),
-    -20px -20px 60px rgba(255, 255, 255, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+    20px 20px 60px rgba(0, 0, 0, 0.15),
+    -20px -20px 60px rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  /* Removed border for seamless look */
 }
 
 .neumorphic-panel::before {
@@ -49,9 +48,9 @@ body {
   right: 0;
   bottom: 0;
   background: linear-gradient(145deg,
-      rgba(255, 255, 255, 0.25) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(0, 0, 0, 0.05) 100%);
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      rgba(0, 0, 0, 0.02) 100%);
   border-radius: 20px;
   pointer-events: none;
 }
@@ -81,7 +80,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-/* Neumorphic buttons with glass effect */
+/* Updated neumorphic button styling */
 .neumorphic-button {
   background: rgba(240, 240, 240, 0.4);
   backdrop-filter: blur(8px);
@@ -89,8 +88,10 @@ body {
   box-shadow:
     6px 6px 12px rgba(0, 0, 0, 0.2),
     -6px -6px 12px rgba(255, 255, 255, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: none;
   transition: all 0.2s ease;
+  border-radius: 50%;
+  aspect-ratio: 1;
 }
 
 .neumorphic-button:active {
@@ -164,4 +165,34 @@ body {
 /* Smooth transitions */
 .smooth-transition {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom CSS-drawn play/pause icons */
+.play-icon {
+  width: 0;
+  height: 0;
+  border-left: 8px solid #374151;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  margin-left: 2px;
+}
+
+.pause-icon {
+  width: 16px;
+  height: 16px;
+  background: 
+    linear-gradient(to right, transparent 0%, transparent 3px, #374151 3px, #374151 6px, transparent 6px, transparent 9px, #374151 9px, #374151 12px, transparent 12px);
+  background-size: 16px 16px;
+  background-position: center;
+}
+
+/* Hide spinner arrows on number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
 }

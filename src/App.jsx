@@ -412,6 +412,15 @@ export default function App() {
                   )}
                 </div>
               )}
+
+              {/* Time since clock in */}
+              {timeSinceStart && (
+                <div className="text-center px-5">
+                  <div className="text-xs text-gray-600">
+                    {timeSinceStart}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

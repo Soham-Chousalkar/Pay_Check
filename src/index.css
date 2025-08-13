@@ -2,139 +2,347 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
-body {
-  font-family: 'Ubuntu', sans-serif;
+/* CSS Variables for Retro Digital Display */
+:root {
+    --retro-segment-color: #1a1a1a;
+    --retro-segment-shadow: rgba(0, 0, 0, 0.15);
 }
 
-/* Digital font for earnings display */
-.earnings-display {
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  font-family: 'DSEG7 Classic', monospace;
+/* Base styles */
+html,
+body {
+    font-family: 'Ubuntu', sans-serif;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Retro Digital 7-Segment Display - Clean Implementation */
+.retro-digital {
+  display: inline-block;
+  font-family: monospace;
+  font-weight: bold;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Dollar sign image styling */
+.retro-digital img {
+  vertical-align: middle;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.retro-digit {
+    font-weight: 900;
+}
+
+.retro-digit {
+    position: relative;
+    display: inline-block;
+    width: 0.9em;
+    height: 1.6em;
+    margin: 0 0.08em;
+}
+
+/* All 7 segments using actual HTML elements */
+.segment {
+    position: absolute;
+    background: var(--retro-segment-color);
+    box-shadow: 2px 2px 4px var(--retro-segment-shadow);
+    border-radius: 1px;
+}
+
+/* Top segment (segment A) */
+.segment-a {
+    width: 0.65em;
+    height: 0.12em;
+    left: 0.125em;
+    top: 0.1em;
+}
+
+/* Right top segment (segment B) */
+.segment-b {
+    width: 0.12em;
+    height: 0.6em;
+    right: 0.125em;
+    top: 0.15em;
+}
+
+/* Right bottom segment (segment C) */
+.segment-c {
+    width: 0.12em;
+    height: 0.6em;
+    right: 0.125em;
+    bottom: 0.15em;
+}
+
+/* Bottom segment (segment D) */
+.segment-d {
+    width: 0.65em;
+    height: 0.12em;
+    left: 0.125em;
+    bottom: 0.1em;
+}
+
+/* Left bottom segment (segment E) */
+.segment-e {
+    width: 0.12em;
+    height: 0.6em;
+    left: 0.125em;
+    bottom: 0.15em;
+}
+
+/* Left top segment (segment F) */
+.segment-f {
+    width: 0.12em;
+    height: 0.6em;
+    left: 0.125em;
+    top: 0.15em;
+}
+
+/* Middle segment (segment G) */
+.segment-g {
+    width: 0.65em;
+    height: 0.12em;
+    left: 0.125em;
+    top: 0.75em;
+}
+
+
+
+/* Character segments for letters and symbols */
+.segment-char {
+    width: 0.6em;
+    height: 0.12em;
+    left: 0.15em;
+    top: 0.4em;
+}
+
+/* Decimal point segment - smaller and positioned at bottom */
+.retro-digit[data-char="."] .segment-char {
+    width: 0.15em;
+    height: 0.15em;
+    left: 0.375em;
+    top: 1.3em;
+    border-radius: 50%;
+}
+
+/* Hide segments by default */
+.segment {
+    display: none;
+}
+
+
+
+/* Show character segments */
+.retro-digit[data-char] .segment-char {
+    display: block;
+}
+
+/* Show segments based on digit */
+.retro-digit[data-digit="0"] .segment-a,
+.retro-digit[data-digit="0"] .segment-b,
+.retro-digit[data-digit="0"] .segment-c,
+.retro-digit[data-digit="0"] .segment-d,
+.retro-digit[data-digit="0"] .segment-e,
+.retro-digit[data-digit="0"] .segment-f {
+    display: block;
+}
+
+.retro-digit[data-digit="1"] .segment-b,
+.retro-digit[data-digit="1"] .segment-c {
+    display: block;
+}
+
+.retro-digit[data-digit="2"] .segment-a,
+.retro-digit[data-digit="2"] .segment-b,
+.retro-digit[data-digit="2"] .segment-d,
+.retro-digit[data-digit="2"] .segment-e,
+.retro-digit[data-digit="2"] .segment-g {
+    display: block;
+}
+
+.retro-digit[data-digit="3"] .segment-a,
+.retro-digit[data-digit="3"] .segment-b,
+.retro-digit[data-digit="3"] .segment-c,
+.retro-digit[data-digit="3"] .segment-d,
+.retro-digit[data-digit="3"] .segment-g {
+    display: block;
+}
+
+.retro-digit[data-digit="4"] .segment-b,
+.retro-digit[data-digit="4"] .segment-c,
+.retro-digit[data-digit="4"] .segment-f,
+.retro-digit[data-digit="4"] .segment-g {
+    display: block;
+}
+
+.retro-digit[data-digit="5"] .segment-a,
+.retro-digit[data-digit="5"] .segment-c,
+.retro-digit[data-digit="5"] .segment-d,
+.retro-digit[data-digit="5"] .segment-f,
+.retro-digit[data-digit="5"] .segment-g {
+    display: block;
+}
+
+.retro-digit[data-digit="6"] .segment-a,
+.retro-digit[data-digit="6"] .segment-c,
+.retro-digit[data-digit="6"] .segment-d,
+.retro-digit[data-digit="6"] .segment-e,
+.retro-digit[data-digit="6"] .segment-f,
+.retro-digit[data-digit="6"] .segment-g {
+    display: block;
+}
+
+.retro-digit[data-digit="7"] .segment-a,
+.retro-digit[data-digit="7"] .segment-b,
+.retro-digit[data-digit="7"] .segment-c {
+    display: block;
+}
+
+.retro-digit[data-digit="8"] .segment-a,
+.retro-digit[data-digit="8"] .segment-b,
+.retro-digit[data-digit="8"] .segment-c,
+.retro-digit[data-digit="8"] .segment-d,
+.retro-digit[data-digit="8"] .segment-e,
+.retro-digit[data-digit="8"] .segment-f,
+.retro-digit[data-digit="8"] .segment-g {
+    display: block;
+}
+
+.retro-digit[data-digit="9"] .segment-a,
+.retro-digit[data-digit="9"] .segment-b,
+.retro-digit[data-digit="9"] .segment-c,
+.retro-digit[data-digit="9"] .segment-d,
+.retro-digit[data-digit="9"] .segment-f,
+.retro-digit[data-digit="9"] .segment-g {
+    display: block;
 }
 
 /* Background */
 .paper-background {
-  background-image: url('/crumpled-paper-bg.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+    background-image: url('/crumpled-paper-bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* Main panel */
 .main-panel {
-  width: 300px;
-  height: 200px;
-  background: rgba(240, 240, 240, 0.1);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border-radius: 20px;
-  box-shadow:
-    20px 20px 60px rgba(0, 0, 0, 0.15),
-    -20px -20px 60px rgba(255, 255, 255, 0.2);
-  position: relative;
-  overflow: hidden;
+    width: 300px;
+    height: 200px;
+    background: rgba(240, 240, 240, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 20px;
+    box-shadow:
+        20px 20px 60px rgba(0, 0, 0, 0.15),
+        -20px -20px 60px rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
 .main-panel::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(145deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(0, 0, 0, 0.02) 100%);
-  border-radius: 20px;
-  pointer-events: none;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(145deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.05) 50%,
+            rgba(0, 0, 0, 0.02) 100%);
+    border-radius: 20px;
+    pointer-events: none;
 }
 
 .main-panel::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
-  border-radius: 20px;
-  pointer-events: none;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+    border-radius: 20px;
+    pointer-events: none;
 }
 
 /* Control button */
 .control-button {
-  background: rgba(240, 240, 240, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.2),
-    -6px -6px 12px rgba(255, 255, 255, 0.3);
-  border: none;
-  transition: all 0.2s ease;
-  border-radius: 50%;
-  aspect-ratio: 1;
-  outline: none;
+    background: rgba(240, 240, 240, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow:
+        6px 6px 12px rgba(0, 0, 0, 0.2),
+        -6px -6px 12px rgba(255, 255, 255, 0.3);
+    border: none;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    aspect-ratio: 1;
+    outline: none;
 }
 
 .control-button:active {
-  box-shadow:
-    inset 6px 6px 12px rgba(0, 0, 0, 0.2),
-    inset -6px -6px 12px rgba(255, 255, 255, 0.3);
+    box-shadow:
+        inset 6px 6px 12px rgba(0, 0, 0, 0.2),
+        inset -6px -6px 12px rgba(255, 255, 255, 0.3);
 }
 
 .control-button:focus {
-  outline: none;
-  box-shadow:
-    6px 6px 12px rgba(0, 0, 0, 0.2),
-    -6px -6px 12px rgba(255, 255, 255, 0.3);
+    outline: none;
+    box-shadow:
+        6px 6px 12px rgba(0, 0, 0, 0.2),
+        -6px -6px 12px rgba(255, 255, 255, 0.3);
 }
 
 /* Parallax effects - optimized for performance */
 .parallax-container {
-  perspective: 1000px;
-  transform-style: preserve-3d;
-  will-change: transform;
-  /* Optimize for animations */
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    will-change: transform;
+    overflow: hidden;
 }
 
 /* Transitions */
 .smooth-transition {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Play/Pause icons */
 .play-icon {
-  width: 0;
-  height: 0;
-  border-left: 12px solid #374151;
-  border-top: 9px solid transparent;
-  border-bottom: 9px solid transparent;
-  margin-left: 3px;
+    width: 0;
+    height: 0;
+    border-left: 12px solid #374151;
+    border-top: 9px solid transparent;
+    border-bottom: 9px solid transparent;
+    margin-left: 3px;
 }
 
 .pause-icon {
-  width: 20px;
-  height: 20px;
-  background:
-    linear-gradient(to right, transparent 0%, transparent 4px, #374151 4px, #374151 8px, transparent 8px, transparent 12px, #374151 12px, #374151 16px, transparent 16px);
-  background-size: 20px 20px;
-  background-position: center;
+    width: 20px;
+    height: 20px;
+    background:
+        linear-gradient(to right, transparent 0%, transparent 4px, #374151 4px, #374151 8px, transparent 8px, transparent 12px, #374151 12px, #374151 16px, transparent 16px);
+    background-size: 20px 20px;
+    background-position: center;
 }
 
 /* Input styling */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 input[type="number"] {
-  -moz-appearance: textfield;
+    -moz-appearance: textfield;
 }
 
 /* ContentEditable title styling - ensure it behaves exactly like h1 */
@@ -146,4 +354,59 @@ input[type="number"] {
   word-wrap: break-word !important;
   overflow-wrap: break-word !important;
   white-space: pre-wrap !important;
+}
+
+/* Style Toggle Button - Neomorphic Design */
+.style-toggle-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.style-toggle-button {
+  background: rgba(240, 240, 240, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: none;
+  border-radius: 15px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow:
+    8px 8px 16px rgba(0, 0, 0, 0.15),
+    -8px -8px 16px rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Ubuntu', sans-serif;
+  font-weight: 600;
+  color: #374151;
+  min-width: 140px;
+  justify-content: center;
+}
+
+.style-toggle-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    10px 10px 20px rgba(0, 0, 0, 0.2),
+    -10px -10px 20px rgba(255, 255, 255, 0.8);
+}
+
+.style-toggle-button:active {
+  transform: translateY(0);
+  box-shadow:
+    inset 6px 6px 12px rgba(0, 0, 0, 0.15),
+    inset -6px -6px 12px rgba(255, 255, 255, 0.6);
+}
+
+.toggle-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.toggle-text {
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }

@@ -1,4 +1,120 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, memo } from "react";
+
+// Memoized Retro Digital Number Component
+const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false }) => {
+  // Memoize the digits array to prevent unnecessary re-creation
+  const digits = useMemo(() => String(value).split(''), [value]);
+
+  return (
+    <div className={`retro-digital ${className}`}>
+      {showDollarSign && (
+        <img
+          src="/Dollar-sign.png"
+          alt="$"
+          className="inline-block w-4 h-4 mr-1 align-middle"
+          style={{
+            objectFit: 'contain',
+            maxWidth: '16px',
+            maxHeight: '16px'
+          }}
+        />
+      )}
+      {digits.map((char, index) => {
+        // Handle decimal points and other non-digit characters
+        if (char === '.') {
+          return (
+            <span
+              key={`${char}-${index}`}
+              className="retro-digit"
+              data-char="."
+            >
+              <span className="segment segment-char"></span>
+              <span style={{ visibility: 'hidden' }}>{char}</span>
+            </span>
+          );
+        }
+
+        // Handle digits
+        if (/[0-9]/.test(char)) {
+          return (
+            <span
+              key={`${char}-${index}`}
+              className="retro-digit"
+              data-digit={char}
+            >
+              <span className="segment segment-a"></span>
+              <span className="segment segment-b"></span>
+              <span className="segment segment-c"></span>
+              <span className="segment segment-d"></span>
+              <span className="segment segment-e"></span>
+              <span className="segment segment-f"></span>
+              <span className="segment segment-g"></span>
+              <span style={{ visibility: 'hidden' }}>{char}</span>
+            </span>
+          );
+        }
+
+        // Handle any other characters
+        return (
+          <span
+            key={`${char}-${index}`}
+            className="retro-digit"
+            data-char={char}
+          >
+            <span className="segment segment-char"></span>
+            <span style={{ visibility: 'hidden' }}>{char}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+});
+
+RetroDigitalNumber.displayName = 'RetroDigitalNumber';
+
+// Memoized Retro Digital Text Component
+const RetroDigitalText = memo(({ text, className = "" }) => {
+  // Memoize the character processing
+  const characters = useMemo(() => text.split(''), [text]);
+
+  return (
+    <div className={`retro-digital ${className}`}>
+      {characters.map((char, index) => {
+        if (/[0-9]/.test(char)) {
+          return (
+            <span
+              key={`${char}-${index}`}
+              className="retro-digit"
+              data-digit={char}
+            >
+              <span className="segment segment-a"></span>
+              <span className="segment segment-b"></span>
+              <span className="segment segment-c"></span>
+              <span className="segment segment-d"></span>
+              <span className="segment segment-e"></span>
+              <span className="segment segment-f"></span>
+              <span className="segment segment-g"></span>
+              <span style={{ visibility: 'hidden' }}>{char}</span>
+            </span>
+          );
+        }
+
+        return (
+          <span
+            key={`${char}-${index}`}
+            className="retro-digit"
+            data-char={char}
+          >
+            <span className="segment segment-char"></span>
+            <span style={{ visibility: 'hidden' }}>{char}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+});
+
+RetroDigitalText.displayName = 'RetroDigitalText';
 
 // Utility functions
 function formatDateTime(ms) {
@@ -50,6 +166,7 @@ export default function App() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [title, setTitle] = useState("PayTracker");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [useRetroStyle, setUseRetroStyle] = useState(true);
 
   // Refs
   const startTimeRef = useRef(null);
@@ -87,13 +204,18 @@ export default function App() {
     else startTimer();
   }, [isRunning, pauseTimer, startTimer]);
 
-  // Parallax mouse movement effect
+  // Optimized parallax mouse movement effect with throttling
   useEffect(() => {
     let animationFrameId;
+    let lastUpdate = 0;
+    const throttleDelay = 16; // ~60fps
 
     const handleMouseMove = (e) => {
+      const now = Date.now();
+      if (now - lastUpdate < throttleDelay) return;
+      lastUpdate = now;
+
       if (containerRef.current) {
-        // Cancel previous animation frame for smoother performance
         if (animationFrameId) {
           cancelAnimationFrame(animationFrameId);
         }
@@ -237,16 +359,15 @@ export default function App() {
     setEarnings(totalSecondsWanted * dollarsPerSecond);
   };
 
-  // Computed values
-  const timeSinceStart = startTime
-    ? (() => {
-      const diff = Date.now() - startTime;
-      const minutes = Math.max(0, Math.floor(diff / 60000));
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      return hours >= 1 ? `${hours}hr ${mins}m since clock in` : `${mins}m since clock in`;
-    })()
-    : "";
+  // Memoized computed values
+  const timeSinceStart = useMemo(() => {
+    if (!startTime) return "";
+    const diff = Date.now() - startTime;
+    const minutes = Math.max(0, Math.floor(diff / 60000));
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours >= 1 ? `${hours}hr ${mins}m since clock in` : `${mins}m since clock in`;
+  }, [startTime]);
 
   // Time display logic
   const shouldShowDate = () => {
@@ -294,16 +415,17 @@ export default function App() {
     }
   };
 
-  // Transform calculations - optimized for smoother parallax
-  const panelTransform = {
-    transform: `translate3d(${mousePosition.x * 0.01}px, ${mousePosition.y * 0.01}px, 0) rotateX(${mousePosition.y * 0.005}deg) rotateY(${mousePosition.x * 0.005}deg)`,
-  };
+  // Memoized transform calculations - optimized for smoother parallax with constrained movement
+  const panelTransform = useMemo(() => ({
+    transform: `translate3d(${Math.max(-10, Math.min(10, mousePosition.x * 0.01))}px, ${Math.max(-10, Math.min(10, mousePosition.y * 0.01))}px, 0) rotateX(${Math.max(-5, Math.min(5, mousePosition.y * 0.005))}deg) rotateY(${Math.max(-5, Math.min(5, mousePosition.x * 0.005))}deg)`,
+  }), [mousePosition.x, mousePosition.y]);
 
-  const backgroundTransform = {
-    transform: `translate3d(${mousePosition.x * -0.005}px, ${mousePosition.y * -0.005}px, 0)`,
-  };
+  const backgroundTransform = useMemo(() => ({
+    transform: `translate3d(${Math.max(-5, Math.min(5, mousePosition.x * -0.005))}px, ${Math.max(-5, Math.min(5, mousePosition.y * -0.005))}px, 0)`,
+  }), [mousePosition.x, mousePosition.y]);
 
-  const timeDisplay = getTimeDisplay();
+  // Memoize time display to prevent unnecessary recalculations
+  const timeDisplay = useMemo(() => getTimeDisplay(), [startTime, endTime, isRunning]);
 
   return (
     <div
@@ -312,7 +434,23 @@ export default function App() {
       style={backgroundTransform}
     >
       {/* Main container */}
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6 overflow-hidden">
+        {/* Style Toggle Button */}
+        <div className="style-toggle-container mb-4">
+          <button
+            onClick={() => setUseRetroStyle(!useRetroStyle)}
+            className="style-toggle-button"
+            title={useRetroStyle ? "Switch to Basic Font" : "Switch to Retro Digital"}
+          >
+            <span className="toggle-icon">
+              {useRetroStyle ? "🔢" : "📱"}
+            </span>
+            <span className="toggle-text">
+              {useRetroStyle ? "Retro Digital" : "Basic Font"}
+            </span>
+          </button>
+        </div>
+
         <div
           className="main-panel smooth-transition relative mx-auto"
           style={panelTransform}
@@ -320,7 +458,7 @@ export default function App() {
           {/* Panel content */}
           <div className="p-5 h-full flex flex-col justify-between">
             {/* Header */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-4">
               <h1
                 ref={titleInputRef}
                 contentEditable={isEditingTitle}
@@ -366,8 +504,18 @@ export default function App() {
               ) : (
                 <div className="text-center mb-8 px-5 relative">
                   {/* Earnings display - centered */}
-                  <div className="text-2xl text-gray-800 font-semibold earnings-display mb-4">
-                    ${earnings.toFixed(5)}
+                  <div className="text-center mb-3">
+                    {useRetroStyle ? (
+                      <RetroDigitalNumber
+                        value={earnings.toFixed(5)}
+                        className="text-2xl"
+                        showDollarSign={true}
+                      />
+                    ) : (
+                      <div className="text-2xl font-bold text-gray-800">
+                        ${earnings.toFixed(5)}
+                      </div>
+                    )}
                   </div>
 
                   {/* Play/Pause button - absolutely positioned */}
@@ -392,22 +540,43 @@ export default function App() {
 
               {/* Rate display */}
               {hourlyRate && (
-                <div className="text-center mb-6 px-5">
-                  <div className="text-sm text-gray-700">
-                    ${hourlyRate}/hr
+                <div className="text-center mb-4 px-5">
+                  <div className="text-xs text-gray-700">
+                    {useRetroStyle ? (
+                      <>
+                        <RetroDigitalNumber
+                          value={hourlyRate}
+                          className="text-xs"
+                          showDollarSign={true}
+                        />
+                        <RetroDigitalText text="/hr" className="text-xs ml-1" />
+                      </>
+                    ) : (
+                      <span className="text-xs text-gray-700">
+                        ${hourlyRate}/hr
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* Time information */}
               {timeDisplay && (
-                <div className="text-center px-5">
+                <div className="text-center px-5 mb-2">
                   <div className="text-xs text-gray-600 mb-1">
-                    {timeDisplay.line1}
+                    {useRetroStyle ? (
+                      <RetroDigitalText text={timeDisplay.line1} className="text-xs" />
+                    ) : (
+                      <span className="text-xs text-gray-600">{timeDisplay.line1}</span>
+                    )}
                   </div>
                   {timeDisplay.line2 && (
                     <div className="text-xs text-gray-600">
-                      {timeDisplay.line2}
+                      {useRetroStyle ? (
+                        <RetroDigitalText text={timeDisplay.line2} className="text-xs" />
+                      ) : (
+                        <span className="text-xs text-gray-600">{timeDisplay.line2}</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -415,7 +584,7 @@ export default function App() {
 
               {/* Time since clock in */}
               {timeSinceStart && (
-                <div className="text-center px-5">
+                <div className="text-center px-5 mb-2">
                   <div className="text-xs text-gray-600">
                     {timeSinceStart}
                   </div>

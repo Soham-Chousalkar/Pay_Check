@@ -9,6 +9,7 @@ const ZOOM_STEP = 0.1;
 const EDGE_TRIGGER_RADIUS = 32;
 const STICK_THRESHOLD = 16;
 const PLUS_BTN_SIZE = 24;
+const STUCK_EPSILON = 2; // tolerance for considering panels "stuck"
 
 const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false }) => {
   const digits = useMemo(() => String(value).split(''), [value]);
@@ -443,7 +444,7 @@ export default function App() {
   const [useRetroStyle, setUseRetroStyle] = useState(true);
   const worldRef = useRef(null);
   const [isDraggingAny, setIsDraggingAny] = useState(false);
-  const [plusState, setPlusState] = useState(null); // {panelId, side, x, y}
+  const [plusState, setPlusState] = useState(null); // {panelId, side, x, y, neighborId?}
 
   useEffect(() => {
     const saved = localStorage.getItem('panelLayout');
@@ -481,10 +482,47 @@ export default function App() {
     return () => el.removeEventListener('wheel', handleWheel);
   }, []);
 
+  // Helpers for edge math
+  const rectsOverlap = (a, b) => !(a.x + PANEL_WIDTH <= b.x || b.x + PANEL_WIDTH <= a.x || a.y + PANEL_HEIGHT <= b.y || b.y + PANEL_HEIGHT <= a.y);
+
+  const verticalOverlapAmount = (a, b) => Math.max(0, Math.min(a.y + PANEL_HEIGHT, b.y + PANEL_HEIGHT) - Math.max(a.y, b.y));
+  const horizontalOverlapAmount = (a, b) => Math.max(0, Math.min(a.x + PANEL_WIDTH, b.x + PANEL_WIDTH) - Math.max(a.x, b.x));
+
+  const isStuckHorizontal = (a, b) => {
+    const rightToLeft = Math.abs((a.x + PANEL_WIDTH + PANEL_GAP) - b.x) <= STUCK_EPSILON;
+    const leftToRight = Math.abs((b.x + PANEL_WIDTH + PANEL_GAP) - a.x) <= STUCK_EPSILON;
+    return (rightToLeft || leftToRight) && verticalOverlapAmount(a, b) > 0;
+  };
+
+  const isStuckVertical = (a, b) => {
+    const bottomToTop = Math.abs((a.y + PANEL_HEIGHT + PANEL_GAP) - b.y) <= STUCK_EPSILON;
+    const topToBottom = Math.abs((b.y + PANEL_HEIGHT + PANEL_GAP) - a.y) <= STUCK_EPSILON;
+    return (bottomToTop || topToBottom) && horizontalOverlapAmount(a, b) > 0;
+  };
+
+  const findNeighborOnSide = (base, side) => {
+    let candidate = null;
+    for (const other of panels) {
+      if (other.id === base.id) continue;
+      if ((side === 'right' || side === 'left') && isStuckHorizontal(base, other)) {
+        const isRight = Math.abs((base.x + PANEL_WIDTH + PANEL_GAP) - other.x) <= STUCK_EPSILON;
+        const isLeft = Math.abs((other.x + PANEL_WIDTH + PANEL_GAP) - base.x) <= STUCK_EPSILON;
+        if ((side === 'right' && isRight) || (side === 'left' && isLeft)) { candidate = other; break; }
+      }
+      if ((side === 'top' || side === 'bottom') && isStuckVertical(base, other)) {
+        const isBottom = Math.abs((base.y + PANEL_HEIGHT + PANEL_GAP) - other.y) <= STUCK_EPSILON;
+        const isTop = Math.abs((other.y + PANEL_HEIGHT + PANEL_GAP) - base.y) <= STUCK_EPSILON;
+        if ((side === 'bottom' && isBottom) || (side === 'top' && isTop)) { candidate = other; break; }
+      }
+    }
+    return candidate;
+  };
+
   // Track mouse to position a single global plus button near the closest edge
   useEffect(() => {
     const handleMove = (e) => {
-      if (!worldRef.current || isDraggingAny) {
+      const interactive = e.target && (e.target.closest && e.target.closest('input, [contenteditable="true"], button'));
+      if (!worldRef.current || isDraggingAny || interactive) {
         setPlusState(null);
         return;
       }
@@ -522,17 +560,39 @@ export default function App() {
 
       const base = panels.find(p => p.id === best.panelId);
       if (!base) { setPlusState(null); return; }
+      const neighbor = findNeighborOnSide(base, best.side);
       let x = base.x + PANEL_WIDTH / 2;
       let y = base.y + PANEL_HEIGHT / 2;
       const offset = 16; // desired offset from edge
-      if (best.side === 'left') x = base.x - (offset);
-      if (best.side === 'right') x = base.x + PANEL_WIDTH + (offset);
-      if (best.side === 'top') y = base.y - (offset);
-      if (best.side === 'bottom') y = base.y + PANEL_HEIGHT + (offset);
-      if (best.side === 'left' || best.side === 'right') y = base.y + PANEL_HEIGHT / 2;
-      if (best.side === 'top' || best.side === 'bottom') x = base.x + PANEL_WIDTH / 2;
 
-      setPlusState({ panelId: best.panelId, side: best.side, x, y });
+      if (neighbor) {
+        // Position between stuck panels
+        if (best.side === 'left' || best.side === 'right') {
+          const baseRight = base.x + PANEL_WIDTH;
+          const neighborLeft = neighbor.x;
+          x = (baseRight + neighborLeft) / 2;
+          const ovTop = Math.max(base.y, neighbor.y);
+          const ovBottom = Math.min(base.y + PANEL_HEIGHT, neighbor.y + PANEL_HEIGHT);
+          y = (ovTop + ovBottom) / 2;
+        } else {
+          const baseBottom = base.y + PANEL_HEIGHT;
+          const neighborTop = neighbor.y;
+          y = (baseBottom + neighborTop) / 2;
+          const ovLeft = Math.max(base.x, neighbor.x);
+          const ovRight = Math.min(base.x + PANEL_WIDTH, neighbor.x + PANEL_WIDTH);
+          x = (ovLeft + ovRight) / 2;
+        }
+        setPlusState({ panelId: best.panelId, side: best.side, x, y, neighborId: neighbor.id });
+      } else {
+        // Position outside selected edge
+        if (best.side === 'left') x = base.x - (offset);
+        if (best.side === 'right') x = base.x + PANEL_WIDTH + (offset);
+        if (best.side === 'top') y = base.y - (offset);
+        if (best.side === 'bottom') y = base.y + PANEL_HEIGHT + (offset);
+        if (best.side === 'left' || best.side === 'right') y = base.y + PANEL_HEIGHT / 2;
+        if (best.side === 'top' || best.side === 'bottom') x = base.x + PANEL_WIDTH / 2;
+        setPlusState({ panelId: best.panelId, side: best.side, x, y });
+      }
     };
 
     const el = stageRef.current;
@@ -605,16 +665,125 @@ export default function App() {
     setPanels(prev => [...prev, safePanel]);
   };
 
-  const handleAddAdjacent = (id, side) => {
+  const insertBetweenGroups = (base, neighbor, side) => {
+    const seamX = (base.x + PANEL_WIDTH + neighbor.x) / 2;
+    const seamY = (base.y + PANEL_HEIGHT + neighbor.y) / 2;
+    // Collect groups by BFS over stuck edges along axis
+    const visited = new Set();
+    const adjH = new Map();
+    const adjV = new Map();
+    for (const a of panels) {
+      adjH.set(a.id, []);
+      adjV.set(a.id, []);
+    }
+    for (let i = 0; i < panels.length; i++) {
+      for (let j = i + 1; j < panels.length; j++) {
+        const a = panels[i], b = panels[j];
+        if (isStuckHorizontal(a, b)) { adjH.get(a.id).push(b.id); adjH.get(b.id).push(a.id); }
+        if (isStuckVertical(a, b)) { adjV.get(a.id).push(b.id); adjV.get(b.id).push(a.id); }
+      }
+    }
+    const useH = side === 'left' || side === 'right';
+    const graph = useH ? adjH : adjV;
+    const bfs = (startId) => {
+      const q = [startId];
+      const res = new Set([startId]);
+      while (q.length) {
+        const cur = q.shift();
+        for (const nb of graph.get(cur) || []) {
+          if (!res.has(nb)) { res.add(nb); q.push(nb); }
+        }
+      }
+      return res;
+    };
+    const leftSet = bfs(base.id);
+    const rightSet = bfs(neighbor.id);
+
+    const leftArr = panels.filter(p => leftSet.has(p.id));
+    const rightArr = panels.filter(p => rightSet.has(p.id));
+
+    const leftSize = leftArr.length;
+    const rightSize = rightArr.length;
+    const denom = Math.max(1, leftSize + rightSize);
+    const deltaLeft = (useH ? PANEL_WIDTH : PANEL_HEIGHT) * (rightSize / denom);
+    const deltaRight = (useH ? PANEL_WIDTH : PANEL_HEIGHT) * (leftSize / denom);
+
+    // Apply proposed shifts
+    let next = panels.map(p => ({ ...p }));
+    if (useH) {
+      for (const p of next) {
+        if (leftSet.has(p.id)) p.x = Math.max(0, p.x - deltaLeft);
+        if (rightSet.has(p.id)) p.x = p.x + deltaRight;
+      }
+    } else {
+      for (const p of next) {
+        if (leftSet.has(p.id)) p.y = Math.max(0, p.y - deltaLeft);
+        if (rightSet.has(p.id)) p.y = p.y + deltaRight;
+      }
+    }
+
+    // Resolve overlaps by pushing further outward from seam
+    const seamLine = useH ? ((base.x + PANEL_WIDTH + neighbor.x) / 2) : ((base.y + PANEL_HEIGHT + neighbor.y) / 2);
+    let guard = 0;
+    const sideOf = (p) => useH ? (p.x + PANEL_WIDTH / 2 <= seamLine ? 'left' : 'right') : (p.y + PANEL_HEIGHT / 2 <= seamLine ? 'left' : 'right');
+    while (guard < 200) {
+      guard += 1;
+      let fixedAny = false;
+      for (let i = 0; i < next.length; i++) {
+        for (let j = i + 1; j < next.length; j++) {
+          const a = next[i], b = next[j];
+          if (!rectsOverlap(a, b)) continue;
+          const sideA = sideOf(a); const sideB = sideOf(b);
+          const move = (useH ? PANEL_GAP : PANEL_GAP);
+          if (useH) {
+            if (sideA === 'left' && sideB !== 'left') { a.x = Math.max(0, a.x - move); fixedAny = true; }
+            else if (sideB === 'left' && sideA !== 'left') { b.x = Math.max(0, b.x - move); fixedAny = true; }
+            else if (sideA === 'right') { a.x = a.x + move; fixedAny = true; }
+            else if (sideB === 'right') { b.x = b.x + move; fixedAny = true; }
+          } else {
+            if (sideA === 'left' && sideB !== 'left') { a.y = Math.max(0, a.y - move); fixedAny = true; }
+            else if (sideB === 'left' && sideA !== 'left') { b.y = Math.max(0, b.y - move); fixedAny = true; }
+            else if (sideA === 'right') { a.y = a.y + move; fixedAny = true; }
+            else if (sideB === 'right') { b.y = b.y + move; fixedAny = true; }
+          }
+        }
+      }
+      if (!fixedAny) break;
+    }
+
+    // Finally, place new panel at seam
+    const newPanel = { id: `panel-${Date.now()}`, x: base.x, y: base.y, title: 'PayTracker' };
+    if (useH) {
+      newPanel.x = neighbor.x - PANEL_GAP - PANEL_WIDTH;
+      newPanel.y = (Math.max(base.y, neighbor.y) + Math.min(base.y + PANEL_HEIGHT, neighbor.y + PANEL_HEIGHT)) / 2 - PANEL_HEIGHT / 2;
+    } else {
+      newPanel.y = neighbor.y - PANEL_GAP - PANEL_HEIGHT;
+      newPanel.x = (Math.max(base.x, neighbor.x) + Math.min(base.x + PANEL_WIDTH, neighbor.x + PANEL_WIDTH)) / 2 - PANEL_WIDTH / 2;
+    }
+
+    next.push(newPanel);
+    setPanels(next);
+  };
+
+  const handleAdd = (panelId, side, neighborId) => {
+    const base = panels.find(p => p.id === panelId);
+    if (!base) return;
+    if (neighborId) {
+      const neighbor = panels.find(p => p.id === neighborId);
+      if (!neighbor) return;
+      insertBetweenGroups(base, neighbor, side);
+      return;
+    }
+    // default adjacent add
     setPanels((prev) => {
-      const base = prev.find((p) => p.id === id);
-      if (!base) return prev;
-      let x = base.x;
-      let y = base.y;
-      if (side === 'right') x = base.x + PANEL_WIDTH + PANEL_GAP;
-      if (side === 'left') x = Math.max(0, base.x - PANEL_WIDTH - PANEL_GAP);
-      if (side === 'bottom') y = base.y + PANEL_HEIGHT + PANEL_GAP;
-      if (side === 'top') y = Math.max(0, base.y - PANEL_HEIGHT - PANEL_GAP);
+      const baseNow = prev.find((p) => p.id === panelId);
+      if (!baseNow) return prev;
+      let x = baseNow.x;
+      let y = baseNow.y;
+      if (side === 'right') x = baseNow.x + PANEL_WIDTH + PANEL_GAP;
+      if (side === 'left') x = Math.max(0, baseNow.x - PANEL_WIDTH - PANEL_GAP);
+      if (side === 'bottom') y = baseNow.y + PANEL_HEIGHT + PANEL_GAP;
+      if (side === 'top') y = Math.max(0, baseNow.y - PANEL_HEIGHT - PANEL_GAP);
       const newPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker' };
       return [...prev, newPanel];
     });
@@ -644,7 +813,7 @@ export default function App() {
           <button
             className="global-plus"
             style={{ left: `${plusState.x}px`, top: `${plusState.y}px` }}
-            onClick={(e) => { e.stopPropagation(); createPanelAdjacent(plusState.panelId, plusState.side); }}
+            onClick={(e) => { e.stopPropagation(); handleAdd(plusState.panelId, plusState.side, plusState.neighborId); }}
             title={`Add panel ${plusState.side}`}
           >
             +

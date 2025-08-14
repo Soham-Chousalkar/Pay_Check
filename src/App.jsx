@@ -130,6 +130,9 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   const [title, setTitle] = useState(panelTitleDefault);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [useRetroStyle, setUseRetroStyle] = useState(useRetroStyleGlobal);
+  const [isEditingTimes, setIsEditingTimes] = useState(false);
+  const [startInput, setStartInput] = useState("");
+  const [endInput, setEndInput] = useState("");
 
   const titleInputRef = useRef(null);
   const startTimeRef = useRef(null);
@@ -179,6 +182,88 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
     selection.removeAllRanges();
     selection.addRange(range);
   }, [title, isEditingTitle]);
+
+  // Helpers for time editing
+  const formatDateTime = (ms) => {
+    if (!ms) return "";
+    const d = new Date(ms);
+    const pad = (n) => String(n).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    const mm = pad(d.getMonth() + 1);
+    const dd = pad(d.getDate());
+    const hh = pad(d.getHours());
+    const mi = pad(d.getMinutes());
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+  };
+
+  const parseUserDateTime = (val, baseMs) => {
+    if (!val || !val.trim()) return null;
+    const s = val.trim().toLowerCase();
+    // Contains date part
+    if (/\d{4}-\d{2}-\d{2}/.test(s)) {
+      const iso = s.replace(/\s+/, 'T');
+      const t = Date.parse(iso);
+      return isNaN(t) ? null : t;
+    }
+    // Time only e.g. 3pm, 03:30, 11:45 am
+    const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i);
+    if (!m) return null;
+    let hh = parseInt(m[1], 10);
+    let mi = m[2] ? parseInt(m[2], 10) : 0;
+    const ampm = m[3];
+    if (ampm) {
+      if (hh === 12) hh = 0;
+      if (ampm === 'pm') hh += 12;
+    }
+    const base = new Date(baseMs || Date.now());
+    base.setHours(hh, mi, 0, 0);
+    return base.getTime();
+  };
+
+  const openTimeEditor = () => {
+    setIsEditingTimes(true);
+    setStartInput(formatDateTime(startTime ?? Date.now()));
+    setEndInput(endTime ? formatDateTime(endTime) : "");
+  };
+
+  const cancelTimeEditor = () => {
+    setIsEditingTimes(false);
+  };
+
+  const saveTimeEditor = () => {
+    const newStart = parseUserDateTime(startInput, startTime ?? Date.now());
+    let newEnd = endInput ? parseUserDateTime(endInput, endTime ?? (startTime ?? Date.now())) : null;
+    if (!newStart) { setIsEditingTimes(false); return; }
+    if (newEnd != null && newEnd < newStart) {
+      // roll end forward by days until >= start
+      const oneDay = 24 * 60 * 60 * 1000;
+      while (newEnd < newStart) newEnd += oneDay;
+    }
+
+    setStartTime(newStart);
+    if (newEnd != null) setEndTime(newEnd); else setEndTime(null);
+
+    if (isRunning) {
+      if (newEnd != null) {
+        // If an end is provided while running, pause at that end
+        const totalSeconds = Math.max(0, (newEnd - newStart) / 1000);
+        setAccumulatedSeconds(totalSeconds);
+        setIsRunning(false);
+        startTimeRef.current = null;
+      } else {
+        const nowMs = Date.now();
+        const totalSeconds = Math.max(0, (nowMs - newStart) / 1000);
+        setAccumulatedSeconds(totalSeconds);
+        startTimeRef.current = performance.now();
+      }
+    } else {
+      const effectiveEnd = newEnd ?? Date.now();
+      const totalSeconds = Math.max(0, (effectiveEnd - newStart) / 1000);
+      setAccumulatedSeconds(totalSeconds);
+    }
+
+    setIsEditingTimes(false);
+  };
 
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
@@ -366,8 +451,8 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
           </div>
         )}
 
-        {timeDisplay && (
-          <div className="text-center px-5 mb-2">
+        {timeDisplay && !isEditingTimes && (
+          <div className="text-center px-5 mb-2 cursor-pointer" onClick={openTimeEditor} title="Click to edit start/end time">
             <div className="text-xs text-gray-600 mb-1">
               {useRetroStyle ? (
                 <RetroDigitalText text={timeDisplay.line1} className="text-xs" />
@@ -384,6 +469,31 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {isEditingTimes && (
+          <div className="px-5 mb-2">
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                value={startInput}
+                onChange={(e) => setStartInput(e.target.value)}
+                className="w-full text-center text-xs text-gray-700 bg-transparent border-none outline-none placeholder-gray-500"
+                placeholder="YYYY-MM-DD HH:MM or 3pm"
+              />
+              <input
+                type="text"
+                value={endInput}
+                onChange={(e) => setEndInput(e.target.value)}
+                className="w-full text-center text-xs text-gray-700 bg-transparent border-none outline-none placeholder-gray-500"
+                placeholder="End time (optional)"
+              />
+              <div className="flex justify-center gap-3 mt-1">
+                <button className="control-button px-3 py-1" onClick={saveTimeEditor}>Save</button>
+                <button className="control-button px-3 py-1" onClick={cancelTimeEditor}>Cancel</button>
+              </div>
+            </div>
           </div>
         )}
       </div>

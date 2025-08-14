@@ -21,18 +21,18 @@ body {
 
 /* Retro Digital 7-Segment Display - Clean Implementation */
 .retro-digital {
-  display: inline-block;
-  font-family: monospace;
-  font-weight: bold;
-  max-width: 100%;
-  overflow: hidden;
+    display: inline-block;
+    font-family: monospace;
+    font-weight: bold;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 /* Dollar sign image styling */
 .retro-digital img {
-  vertical-align: middle;
-  display: inline-block;
-  flex-shrink: 0;
+    vertical-align: middle;
+    display: inline-block;
+    flex-shrink: 0;
 }
 
 .retro-digit {
@@ -347,66 +347,150 @@ input[type="number"] {
 
 /* ContentEditable title styling - ensure it behaves exactly like h1 */
 [contenteditable="true"] {
-  outline: none !important;
-  border: none !important;
-  background: transparent !important;
-  font-family: inherit !important;
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
-  white-space: pre-wrap !important;
+    outline: none !important;
+    border: none !important;
+    background: transparent !important;
+    font-family: inherit !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
 }
 
 /* Style Toggle Button - Neomorphic Design */
 .style-toggle-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
 }
 
 .style-toggle-button {
-  background: rgba(240, 240, 240, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: none;
-  border-radius: 15px;
-  padding: 12px 20px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow:
-    8px 8px 16px rgba(0, 0, 0, 0.15),
-    -8px -8px 16px rgba(255, 255, 255, 0.6);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Ubuntu', sans-serif;
-  font-weight: 600;
-  color: #374151;
-  min-width: 140px;
-  justify-content: center;
+    background: rgba(240, 240, 240, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: none;
+    border-radius: 15px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow:
+        8px 8px 16px rgba(0, 0, 0, 0.15),
+        -8px -8px 16px rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Ubuntu', sans-serif;
+    font-weight: 600;
+    color: #374151;
+    min-width: 140px;
+    justify-content: center;
 }
 
 .style-toggle-button:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    10px 10px 20px rgba(0, 0, 0, 0.2),
-    -10px -10px 20px rgba(255, 255, 255, 0.8);
+    transform: translateY(-2px);
+    box-shadow:
+        10px 10px 20px rgba(0, 0, 0, 0.2),
+        -10px -10px 20px rgba(255, 255, 255, 0.8);
 }
 
 .style-toggle-button:active {
-  transform: translateY(0);
-  box-shadow:
-    inset 6px 6px 12px rgba(0, 0, 0, 0.15),
-    inset -6px -6px 12px rgba(255, 255, 255, 0.6);
+    transform: translateY(0);
+    box-shadow:
+        inset 6px 6px 12px rgba(0, 0, 0, 0.15),
+        inset -6px -6px 12px rgba(255, 255, 255, 0.6);
 }
 
 .toggle-icon {
-  font-size: 16px;
-  line-height: 1;
+    font-size: 16px;
+    line-height: 1;
 }
 
 .toggle-text {
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Panels stage */
+.panel-wrapper {
+    position: absolute;
+    cursor: grab;
+}
+
+.panel-wrapper:active {
+    cursor: grabbing;
+}
+
+/* Edge "+" buttons (shown on hover near edges) */
+.main-panel .edge-button {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(240, 240, 240, 0.8);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    color: #374151;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
+.main-panel:hover .edge-button {
+    display: flex;
+}
+
+.edge-top {
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Single global plus button overlay */
+.global-plus {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(240, 240, 240, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow:
+        6px 6px 12px rgba(0, 0, 0, 0.2),
+        -6px -6px 12px rgba(255, 255, 255, 0.3);
+    color: #374151;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    z-index: 20;
+}
+
+.global-plus:hover {
+    transform: translate(-50%, -50%) scale(1.05);
+}
+
+.edge-bottom {
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.edge-left {
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.edge-right {
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
 }

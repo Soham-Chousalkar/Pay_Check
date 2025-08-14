@@ -1,8 +1,16 @@
-import { useEffect, useRef, useState, useCallback, useMemo, memo } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo, memo } from "react";
 
-// Memoized Retro Digital Number Component
+const PANEL_WIDTH = 300;
+const PANEL_HEIGHT = 200;
+const PANEL_GAP = 16;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 2;
+const ZOOM_STEP = 0.1;
+const EDGE_TRIGGER_RADIUS = 32;
+const STICK_THRESHOLD = 16;
+const PLUS_BTN_SIZE = 24;
+
 const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false }) => {
-  // Memoize the digits array to prevent unnecessary re-creation
   const digits = useMemo(() => String(value).split(''), [value]);
 
   return (
@@ -12,36 +20,22 @@ const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false
           src="/Dollar-sign.png"
           alt="$"
           className="inline-block w-4 h-4 mr-1 align-middle"
-          style={{
-            objectFit: 'contain',
-            maxWidth: '16px',
-            maxHeight: '16px'
-          }}
+          style={{ objectFit: 'contain', maxWidth: '16px', maxHeight: '16px' }}
         />
       )}
       {digits.map((char, index) => {
-        // Handle decimal points and other non-digit characters
         if (char === '.') {
           return (
-            <span
-              key={`${char}-${index}`}
-              className="retro-digit"
-              data-char="."
-            >
+            <span key={`${char}-${index}`} className="retro-digit" data-char=".">
               <span className="segment segment-char"></span>
               <span style={{ visibility: 'hidden' }}>{char}</span>
             </span>
           );
         }
 
-        // Handle digits
         if (/[0-9]/.test(char)) {
           return (
-            <span
-              key={`${char}-${index}`}
-              className="retro-digit"
-              data-digit={char}
-            >
+            <span key={`${char}-${index}`} className="retro-digit" data-digit={char}>
               <span className="segment segment-a"></span>
               <span className="segment segment-b"></span>
               <span className="segment segment-c"></span>
@@ -54,13 +48,8 @@ const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false
           );
         }
 
-        // Handle any other characters
         return (
-          <span
-            key={`${char}-${index}`}
-            className="retro-digit"
-            data-char={char}
-          >
+          <span key={`${char}-${index}`} className="retro-digit" data-char={char}>
             <span className="segment segment-char"></span>
             <span style={{ visibility: 'hidden' }}>{char}</span>
           </span>
@@ -69,12 +58,9 @@ const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false
     </div>
   );
 });
-
 RetroDigitalNumber.displayName = 'RetroDigitalNumber';
 
-// Memoized Retro Digital Text Component
 const RetroDigitalText = memo(({ text, className = "" }) => {
-  // Memoize the character processing
   const characters = useMemo(() => text.split(''), [text]);
 
   return (
@@ -82,11 +68,7 @@ const RetroDigitalText = memo(({ text, className = "" }) => {
       {characters.map((char, index) => {
         if (/[0-9]/.test(char)) {
           return (
-            <span
-              key={`${char}-${index}`}
-              className="retro-digit"
-              data-digit={char}
-            >
+            <span key={`${char}-${index}`} className="retro-digit" data-digit={char}>
               <span className="segment segment-a"></span>
               <span className="segment segment-b"></span>
               <span className="segment segment-c"></span>
@@ -100,11 +82,7 @@ const RetroDigitalText = memo(({ text, className = "" }) => {
         }
 
         return (
-          <span
-            key={`${char}-${index}`}
-            className="retro-digit"
-            data-char={char}
-          >
+          <span key={`${char}-${index}`} className="retro-digit" data-char={char}>
             <span className="segment segment-char"></span>
             <span style={{ visibility: 'hidden' }}>{char}</span>
           </span>
@@ -113,21 +91,7 @@ const RetroDigitalText = memo(({ text, className = "" }) => {
     </div>
   );
 });
-
 RetroDigitalText.displayName = 'RetroDigitalText';
-
-// Utility functions
-function formatDateTime(ms) {
-  if (!ms) return "";
-  const d = new Date(ms);
-  const pad = (n) => String(n).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
-  const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
-}
 
 function formatTimeOnly(ms) {
   if (!ms) return "";
@@ -153,8 +117,7 @@ function parseDateTime(val) {
   return isNaN(ms) ? null : ms;
 }
 
-export default function App() {
-  // State management
+function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal = true }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(null);
   const [rateInput, setRateInput] = useState("");
@@ -163,21 +126,16 @@ export default function App() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [isEditingCounter, setIsEditingCounter] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [title, setTitle] = useState("PayTracker");
+  const [title, setTitle] = useState(panelTitleDefault);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [useRetroStyle, setUseRetroStyle] = useState(true);
+  const [useRetroStyle, setUseRetroStyle] = useState(useRetroStyleGlobal);
 
-  // Refs
+  const titleInputRef = useRef(null);
   const startTimeRef = useRef(null);
   const timerRef = useRef(null);
-  const containerRef = useRef(null);
-  const titleInputRef = useRef(null);
 
-  // Computed values
   const dollarsPerSecond = hourlyRate ? hourlyRate / 3600 : 0;
 
-  // Timer functions - defined before useEffect that references them
   const startTimer = useCallback((rateOverride) => {
     const rate = rateOverride ?? hourlyRate;
     if (!rate || rate <= 0) return;
@@ -204,70 +162,26 @@ export default function App() {
     else startTimer();
   }, [isRunning, pauseTimer, startTimer]);
 
-  // Optimized parallax mouse movement effect with throttling
+  // Sync panel style with global toggle
   useEffect(() => {
-    let animationFrameId;
-    let lastUpdate = 0;
-    const throttleDelay = 16; // ~60fps
+    setUseRetroStyle(useRetroStyleGlobal);
+  }, [useRetroStyleGlobal]);
 
-    const handleMouseMove = (e) => {
-      const now = Date.now();
-      if (now - lastUpdate < throttleDelay) return;
-      lastUpdate = now;
+  // Keep caret at end while editing to avoid reverse typing
+  useLayoutEffect(() => {
+    if (!isEditingTitle || !titleInputRef.current) return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(titleInputRef.current);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }, [title, isEditingTitle]);
 
-      if (containerRef.current) {
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
-        }
-
-        animationFrameId = requestAnimationFrame(() => {
-          const rect = containerRef.current.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-
-          const mouseX = e.clientX - centerX;
-          const mouseY = e.clientY - centerY;
-
-          setMousePosition({ x: mouseX, y: mouseY });
-        });
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, []);
-
-  // Keyboard event listener for spacebar
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Only trigger if spacebar is pressed and we have an hourly rate
-      if (e.code === 'Space' && hourlyRate) {
-        // If we're editing the title, don't prevent default (allow normal spacebar behavior)
-        if (isEditingTitle) {
-          return;
-        }
-
-        // For timer control, prevent default to avoid page scrolling
-        e.preventDefault();
-        toggleTimer();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hourlyRate, isEditingTitle, toggleTimer]);
-
-  // Auto-focus title when editing starts
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
       titleInputRef.current.focus();
-      // Place cursor at the end of the text
       const range = document.createRange();
       const selection = window.getSelection();
       range.selectNodeContents(titleInputRef.current);
@@ -277,7 +191,6 @@ export default function App() {
     }
   }, [isEditingTitle]);
 
-  // Timer effect
   useEffect(() => {
     if (!isRunning) {
       if (timerRef.current) {
@@ -301,7 +214,6 @@ export default function App() {
     };
   }, [isRunning, accumulatedSeconds, dollarsPerSecond]);
 
-  // Earnings update effect
   useEffect(() => {
     if (hourlyRate != null) {
       const now = performance.now();
@@ -311,7 +223,6 @@ export default function App() {
     }
   }, [hourlyRate, accumulatedSeconds]);
 
-  // Event handlers
   const handleRateSubmit = (e) => {
     if (e.key === "Enter") {
       const parsed = parseFloat(rateInput);
@@ -344,22 +255,6 @@ export default function App() {
     }
   };
 
-  const handleStartTimeChange = (val) => {
-    const ms = parseDateTime(val);
-    if (!ms) return;
-    setStartTime(ms);
-    const nowMs = Date.now();
-    const totalSecondsWanted = Math.max(0, (nowMs - ms) / 1000);
-    setAccumulatedSeconds(totalSecondsWanted);
-    if (isRunning) {
-      startTimeRef.current = performance.now();
-    } else {
-      startTimeRef.current = null;
-    }
-    setEarnings(totalSecondsWanted * dollarsPerSecond);
-  };
-
-  // Memoized computed values
   const timeSinceStart = useMemo(() => {
     if (!startTime) return "";
     const diff = Date.now() - startTime;
@@ -369,230 +264,392 @@ export default function App() {
     return hours >= 1 ? `${hours}hr ${mins}m since clock in` : `${mins}m since clock in`;
   }, [startTime]);
 
-  // Time display logic
-  const shouldShowDate = () => {
-    if (!startTime) return false;
-
-    if (isRunning) {
-      const startDate = formatDateOnly(startTime);
-      const nowDate = formatDateOnly(Date.now());
-      return startDate !== nowDate;
-    } else {
-      if (!endTime) return false;
-      const startDate = formatDateOnly(startTime);
-      const endDate = formatDateOnly(endTime);
-      return startDate !== endDate;
-    }
-  };
-
   const getTimeDisplay = () => {
     if (!startTime) return null;
-
-    if (shouldShowDate()) {
+    const showDate = (() => {
+      if (!startTime) return false;
       if (isRunning) {
-        return {
-          line1: `${formatDateOnly(startTime)} ${formatTimeOnly(startTime)}`,
-          line2: null
-        };
+        const startDate = formatDateOnly(startTime);
+        const nowDate = formatDateOnly(Date.now());
+        return startDate !== nowDate;
       } else {
-        return {
-          line1: `${formatDateOnly(startTime)} ${formatTimeOnly(startTime)}`,
-          line2: `${formatDateOnly(endTime)} ${formatTimeOnly(endTime)}`
-        };
+        if (!endTime) return false;
+        const startDate = formatDateOnly(startTime);
+        const endDate = formatDateOnly(endTime);
+        return startDate !== endDate;
+      }
+    })();
+    if (showDate) {
+      if (isRunning) {
+        return { line1: `${formatDateOnly(startTime)} ${formatTimeOnly(startTime)}`, line2: null };
+      } else {
+        return { line1: `${formatDateOnly(startTime)} ${formatTimeOnly(startTime)}`, line2: `${formatDateOnly(endTime)} ${formatTimeOnly(endTime)}` };
       }
     } else {
       if (isRunning) {
-        return {
-          line1: formatTimeOnly(startTime),
-          line2: null
-        };
+        return { line1: formatTimeOnly(startTime), line2: null };
       } else {
-        return {
-          line1: `${formatTimeOnly(startTime)} – ${formatTimeOnly(endTime)}`,
-          line2: null
-        };
+        return { line1: `${formatTimeOnly(startTime)} – ${formatTimeOnly(endTime)}`, line2: null };
       }
     }
   };
 
-  // Memoized transform calculations - optimized for smoother parallax with constrained movement
-  const panelTransform = useMemo(() => ({
-    transform: `translate3d(${Math.max(-10, Math.min(10, mousePosition.x * 0.01))}px, ${Math.max(-10, Math.min(10, mousePosition.y * 0.01))}px, 0) rotateX(${Math.max(-5, Math.min(5, mousePosition.y * 0.005))}deg) rotateY(${Math.max(-5, Math.min(5, mousePosition.x * 0.005))}deg)`,
-  }), [mousePosition.x, mousePosition.y]);
-
-  const backgroundTransform = useMemo(() => ({
-    transform: `translate3d(${Math.max(-5, Math.min(5, mousePosition.x * -0.005))}px, ${Math.max(-5, Math.min(5, mousePosition.y * -0.005))}px, 0)`,
-  }), [mousePosition.x, mousePosition.y]);
-
-  // Memoize time display to prevent unnecessary recalculations
   const timeDisplay = useMemo(() => getTimeDisplay(), [startTime, endTime, isRunning]);
 
   return (
-    <div
-      ref={containerRef}
-      className="min-h-screen paper-background parallax-container overflow-hidden relative"
-      style={backgroundTransform}
-    >
-      {/* Main container */}
-      <div className="min-h-screen flex items-center justify-center p-6 overflow-hidden">
-        {/* Style Toggle Button */}
-        <div className="style-toggle-container mb-4">
-          <button
-            onClick={() => setUseRetroStyle(!useRetroStyle)}
-            className="style-toggle-button"
-            title={useRetroStyle ? "Switch to Basic Font" : "Switch to Retro Digital"}
-          >
-            <span className="toggle-icon">
-              {useRetroStyle ? "🔢" : "📱"}
-            </span>
-            <span className="toggle-text">
-              {useRetroStyle ? "Retro Digital" : "Basic Font"}
-            </span>
-          </button>
-        </div>
-
-        <div
-          className="main-panel smooth-transition relative mx-auto"
-          style={panelTransform}
+    <div className="p-5 h-full flex flex-col justify-between">
+      <div className="text-center mb-4">
+        <h1
+          ref={titleInputRef}
+          contentEditable={isEditingTitle}
+          suppressContentEditableWarning
+          onInput={(e) => setTitle(e.currentTarget.textContent)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); setIsEditingTitle(false); }
+            else if (e.key === 'Escape') { e.preventDefault(); setIsEditingTitle(false); }
+          }}
+          onBlur={() => setIsEditingTitle(false)}
+          onClick={() => !isEditingTitle && setIsEditingTitle(true)}
+          className={`text-gray-800 font-bold text-xl tracking-wide px-6 transition-colors ${isEditingTitle ? 'cursor-text outline-none' : 'cursor-pointer hover:text-gray-600'}`}
+          style={{ outline: isEditingTitle ? 'none' : undefined }}
         >
-          {/* Panel content */}
-          <div className="p-5 h-full flex flex-col justify-between">
-            {/* Header */}
-            <div className="text-center mb-4">
-              <h1
-                ref={titleInputRef}
-                contentEditable={isEditingTitle}
-                suppressContentEditableWarning
-                onInput={(e) => setTitle(e.currentTarget.textContent)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    setIsEditingTitle(false);
-                  } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    setIsEditingTitle(false);
-                  }
-                  // Allow spacebar to work normally during title editing
-                }}
-                onBlur={() => setIsEditingTitle(false)}
-                onClick={() => !isEditingTitle && setIsEditingTitle(true)}
-                className={`text-gray-800 font-bold text-xl tracking-wide px-6 transition-colors ${isEditingTitle
-                  ? 'cursor-text outline-none'
-                  : 'cursor-pointer hover:text-gray-600'
-                  }`}
-                style={{ outline: isEditingTitle ? 'none' : undefined }}
-              >
-                {title}
-              </h1>
-            </div>
+          {title}
+        </h1>
+      </div>
 
-            {/* Main content area */}
-            <div className="flex-1 flex flex-col justify-center">
-              {/* Rate input or earnings display */}
-              {!isRunning && !hourlyRate ? (
-                <div className="mb-8 px-5 relative">
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Enter hourly rate"
-                    value={rateInput}
-                    onChange={(e) => setRateInput(e.target.value)}
-                    onKeyDown={handleRateSubmit}
-                    className="w-full text-center text-lg text-gray-500 bg-transparent border-none outline-none placeholder-gray-500"
-                  />
-                </div>
+      <div className="flex-1 flex flex-col justify-center">
+        {!isRunning && !hourlyRate ? (
+          <div className="mb-8 px-5 relative">
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Enter hourly rate"
+              value={rateInput}
+              onChange={(e) => setRateInput(e.target.value)}
+              onKeyDown={handleRateSubmit}
+              className="w-full text-center text-lg text-gray-500 bg-transparent border-none outline-none placeholder-gray-500"
+            />
+          </div>
+        ) : (
+          <div className="text-center mb-8 px-5 relative">
+            <div className="text-center mb-3">
+              {useRetroStyle ? (
+                <RetroDigitalNumber value={earnings.toFixed(5)} className="text-2xl" showDollarSign={true} />
               ) : (
-                <div className="text-center mb-8 px-5 relative">
-                  {/* Earnings display - centered */}
-                  <div className="text-center mb-3">
-                    {useRetroStyle ? (
-                      <RetroDigitalNumber
-                        value={earnings.toFixed(5)}
-                        className="text-2xl"
-                        showDollarSign={true}
-                      />
-                    ) : (
-                      <div className="text-2xl font-bold text-gray-800">
-                        ${earnings.toFixed(5)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Play/Pause button - absolutely positioned */}
-                  <button
-                    onClick={toggleTimer}
-                    className="control-button p-4 rounded-full text-gray-800 hover:scale-110 transition-transform absolute"
-                    style={{
-                      right: '20px',
-                      top: '50%',
-                      transform: 'translateY(-50%)'
-                    }}
-                    disabled={!hourlyRate}
-                  >
-                    {isRunning ? (
-                      <div className="pause-icon"></div>
-                    ) : (
-                      <div className="play-icon"></div>
-                    )}
-                  </button>
-                </div>
+                <div className="text-2xl font-bold text-gray-800">${earnings.toFixed(5)}</div>
               )}
+            </div>
+            <button
+              onClick={toggleTimer}
+              className="control-button p-4 rounded-full text-gray-800 hover:scale-110 transition-transform absolute"
+              style={{ right: '20px', top: '50%', transform: 'translateY(-50%)' }}
+              disabled={!hourlyRate}
+            >
+              {isRunning ? (<div className="pause-icon"></div>) : (<div className="play-icon"></div>)}
+            </button>
+          </div>
+        )}
 
-              {/* Rate display */}
-              {hourlyRate && (
-                <div className="text-center mb-4 px-5">
-                  <div className="text-xs text-gray-700">
-                    {useRetroStyle ? (
-                      <>
-                        <RetroDigitalNumber
-                          value={hourlyRate}
-                          className="text-xs"
-                          showDollarSign={true}
-                        />
-                        <RetroDigitalText text="/hr" className="text-xs ml-1" />
-                      </>
-                    ) : (
-                      <span className="text-xs text-gray-700">
-                        ${hourlyRate}/hr
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Time information */}
-              {timeDisplay && (
-                <div className="text-center px-5 mb-2">
-                  <div className="text-xs text-gray-600 mb-1">
-                    {useRetroStyle ? (
-                      <RetroDigitalText text={timeDisplay.line1} className="text-xs" />
-                    ) : (
-                      <span className="text-xs text-gray-600">{timeDisplay.line1}</span>
-                    )}
-                  </div>
-                  {timeDisplay.line2 && (
-                    <div className="text-xs text-gray-600">
-                      {useRetroStyle ? (
-                        <RetroDigitalText text={timeDisplay.line2} className="text-xs" />
-                      ) : (
-                        <span className="text-xs text-gray-600">{timeDisplay.line2}</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Time since clock in */}
-              {timeSinceStart && (
-                <div className="text-center px-5 mb-2">
-                  <div className="text-xs text-gray-600">
-                    {timeSinceStart}
-                  </div>
-                </div>
+        {hourlyRate && (
+          <div className="text-center mb-4 px-5">
+            <div className="text-xs text-gray-700">
+              {useRetroStyle ? (
+                <>
+                  <RetroDigitalNumber value={hourlyRate} className="text-xs" showDollarSign={true} />
+                  <RetroDigitalText text="/hr" className="text-xs ml-1" />
+                </>
+              ) : (
+                <span className="text-xs text-gray-700">${hourlyRate}/hr</span>
               )}
             </div>
           </div>
-        </div>
+        )}
+
+        {timeDisplay && (
+          <div className="text-center px-5 mb-2">
+            <div className="text-xs text-gray-600 mb-1">
+              {useRetroStyle ? (
+                <RetroDigitalText text={timeDisplay.line1} className="text-xs" />
+              ) : (
+                <span className="text-xs text-gray-600">{timeDisplay.line1}</span>
+              )}
+            </div>
+            {timeDisplay.line2 && (
+              <div className="text-xs text-gray-600">
+                {useRetroStyle ? (
+                  <RetroDigitalText text={timeDisplay.line2} className="text-xs" />
+                ) : (
+                  <span className="text-xs text-gray-600">{timeDisplay.line2}</span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlobal }) {
+  const wrapperRef = useRef(null);
+  const dragStateRef = useRef({ dragging: false, offsetX: 0, offsetY: 0, startX: 0, startY: 0 });
+
+  const handleMouseDown = (e) => {
+    const interactive = e.target.closest('input, button, [contenteditable="true"]');
+    if (interactive) return;
+    const rect = wrapperRef.current.getBoundingClientRect();
+    dragStateRef.current.dragging = true;
+    dragStateRef.current.offsetX = e.clientX - rect.left;
+    dragStateRef.current.offsetY = e.clientY - rect.top;
+    dragStateRef.current.startX = panel.x;
+    dragStateRef.current.startY = panel.y;
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp, { once: true });
+    onDragStart();
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragStateRef.current.dragging) return;
+    const newX = e.clientX - dragStateRef.current.offsetX;
+    const newY = e.clientY - dragStateRef.current.offsetY;
+    onDrag(panel.id, { x: newX, y: newY });
+  };
+
+  const handleMouseUp = () => {
+    dragStateRef.current.dragging = false;
+    window.removeEventListener('mousemove', handleMouseMove);
+    onDragEnd(panel.id);
+  };
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="panel-wrapper"
+      style={{ left: `${panel.x}px`, top: `${panel.y}px`, width: `${PANEL_WIDTH}px`, height: `${PANEL_HEIGHT}px` }}
+      onMouseDown={handleMouseDown}
+    >
+      <div className="main-panel smooth-transition relative mx-auto w-full h-full">
+        <EarningsPanel useRetroStyleGlobal={useRetroStyleGlobal} />
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const [panels, setPanels] = useState([]);
+  const [scale, setScale] = useState(1);
+  const stageRef = useRef(null);
+  const [useRetroStyle, setUseRetroStyle] = useState(true);
+  const worldRef = useRef(null);
+  const [isDraggingAny, setIsDraggingAny] = useState(false);
+  const [plusState, setPlusState] = useState(null); // {panelId, side, x, y}
+
+  useEffect(() => {
+    const saved = localStorage.getItem('panelLayout');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPanels(parsed);
+          return;
+        }
+      } catch { }
+    }
+    const x = Math.max(0, (window.innerWidth - PANEL_WIDTH) / 2);
+    const y = Math.max(0, (window.innerHeight - PANEL_HEIGHT) / 2);
+    setPanels([{ id: `panel-${Date.now()}`, x, y, title: 'PayTracker' }]);
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('panelLayout', JSON.stringify(panels));
+  }, [panels]);
+
+  const handleWheel = (e) => {
+    const overInput = e.target.closest('input, [contenteditable="true"]');
+    if (overInput) return;
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+    setScale((prev) => Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +(prev + delta).toFixed(2))));
+  };
+
+  // Attach non-passive wheel listener so preventDefault works without warnings
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  // Track mouse to position a single global plus button near the closest edge
+  useEffect(() => {
+    const handleMove = (e) => {
+      if (!worldRef.current || isDraggingAny) {
+        setPlusState(null);
+        return;
+      }
+      const rect = worldRef.current.getBoundingClientRect();
+      const localX = (e.clientX - rect.left) / scale;
+      const localY = (e.clientY - rect.top) / scale;
+
+      let best = null; // {panelId, side, dist}
+      for (const p of panels) {
+        const leftDist = Math.abs(localX - p.x);
+        const rightDist = Math.abs(localX - (p.x + PANEL_WIDTH));
+        const topDist = Math.abs(localY - p.y);
+        const bottomDist = Math.abs(localY - (p.y + PANEL_HEIGHT));
+
+        const withinY = localY >= p.y - EDGE_TRIGGER_RADIUS && localY <= p.y + PANEL_HEIGHT + EDGE_TRIGGER_RADIUS;
+        const withinX = localX >= p.x - EDGE_TRIGGER_RADIUS && localX <= p.x + PANEL_WIDTH + EDGE_TRIGGER_RADIUS;
+
+        const candidates = [];
+        if (withinY) candidates.push({ panelId: p.id, side: 'left', dist: leftDist });
+        if (withinY) candidates.push({ panelId: p.id, side: 'right', dist: rightDist });
+        if (withinX) candidates.push({ panelId: p.id, side: 'top', dist: topDist });
+        if (withinX) candidates.push({ panelId: p.id, side: 'bottom', dist: bottomDist });
+
+        for (const c of candidates) {
+          if (c.dist <= EDGE_TRIGGER_RADIUS) {
+            if (!best || c.dist < best.dist) best = c;
+          }
+        }
+      }
+
+      if (!best) {
+        setPlusState(null);
+        return;
+      }
+
+      const base = panels.find(p => p.id === best.panelId);
+      if (!base) { setPlusState(null); return; }
+      let x = base.x + PANEL_WIDTH / 2;
+      let y = base.y + PANEL_HEIGHT / 2;
+      const offset = 16; // desired offset from edge
+      if (best.side === 'left') x = base.x - (offset);
+      if (best.side === 'right') x = base.x + PANEL_WIDTH + (offset);
+      if (best.side === 'top') y = base.y - (offset);
+      if (best.side === 'bottom') y = base.y + PANEL_HEIGHT + (offset);
+      if (best.side === 'left' || best.side === 'right') y = base.y + PANEL_HEIGHT / 2;
+      if (best.side === 'top' || best.side === 'bottom') x = base.x + PANEL_WIDTH / 2;
+
+      setPlusState({ panelId: best.panelId, side: best.side, x, y });
+    };
+
+    const el = stageRef.current;
+    if (!el) return;
+    el.addEventListener('mousemove', handleMove);
+    return () => el.removeEventListener('mousemove', handleMove);
+  }, [panels, scale, isDraggingAny]);
+
+  const handleDrag = (id, pos) => {
+    setPanels((prev) => prev.map((p) => (p.id === id ? { ...p, ...pos } : p)));
+  };
+
+  const handleDragStart = () => {
+    setIsDraggingAny(true);
+    setPlusState(null);
+  };
+
+  const handleDragEnd = (id) => {
+    setIsDraggingAny(false);
+    setPanels((prev) => {
+      const me = prev.find(p => p.id === id);
+      if (!me) return prev;
+      let snapX = me.x;
+      let snapY = me.y;
+      let didSnap = false;
+      for (const other of prev) {
+        if (other.id === id) continue;
+        const vertOverlap = !(me.y + PANEL_HEIGHT < other.y || other.y + PANEL_HEIGHT < me.y);
+        if (vertOverlap) {
+          if (Math.abs((me.x + PANEL_WIDTH) - other.x) <= STICK_THRESHOLD) {
+            snapX = other.x - PANEL_WIDTH - PANEL_GAP; didSnap = true;
+          } else if (Math.abs(me.x - (other.x + PANEL_WIDTH)) <= STICK_THRESHOLD) {
+            snapX = other.x + PANEL_WIDTH + PANEL_GAP; didSnap = true;
+          }
+        }
+        const horizOverlap = !(me.x + PANEL_WIDTH < other.x || other.x + PANEL_WIDTH < me.x);
+        if (horizOverlap) {
+          if (Math.abs((me.y + PANEL_HEIGHT) - other.y) <= STICK_THRESHOLD) {
+            snapY = other.y - PANEL_HEIGHT - PANEL_GAP; didSnap = true;
+          } else if (Math.abs(me.y - (other.y + PANEL_HEIGHT)) <= STICK_THRESHOLD) {
+            snapY = other.y + PANEL_HEIGHT + PANEL_GAP; didSnap = true;
+          }
+        }
+      }
+      if (!didSnap) return prev;
+      return prev.map(p => p.id === id ? { ...p, x: snapX, y: snapY } : p);
+    });
+  };
+
+  const createPanelAdjacent = (panelId, side) => {
+    const base = panels.find(p => p.id === panelId);
+    if (!base) return;
+    let x = base.x;
+    let y = base.y;
+    if (side === 'right') x = base.x + PANEL_WIDTH + PANEL_GAP;
+    if (side === 'left') x = Math.max(0, base.x - PANEL_WIDTH - PANEL_GAP);
+    if (side === 'bottom') y = base.y + PANEL_HEIGHT + PANEL_GAP;
+    if (side === 'top') y = Math.max(0, base.y - PANEL_HEIGHT - PANEL_GAP);
+    const newPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker' };
+    const doesOverlap = (a, b) => !(a.x + PANEL_WIDTH <= b.x || b.x + PANEL_WIDTH <= a.x || a.y + PANEL_HEIGHT <= b.y || b.y + PANEL_HEIGHT <= a.y);
+    let safePanel = { ...newPanel };
+    let guard = 0;
+    while (panels.some(p => doesOverlap(safePanel, p)) && guard < 200) {
+      guard += 1;
+      if (side === 'right') safePanel.x += PANEL_GAP;
+      if (side === 'left') safePanel.x = Math.max(0, safePanel.x - PANEL_GAP);
+      if (side === 'bottom') safePanel.y += PANEL_GAP;
+      if (side === 'top') safePanel.y = Math.max(0, safePanel.y - PANEL_GAP);
+    }
+    setPanels(prev => [...prev, safePanel]);
+  };
+
+  const handleAddAdjacent = (id, side) => {
+    setPanels((prev) => {
+      const base = prev.find((p) => p.id === id);
+      if (!base) return prev;
+      let x = base.x;
+      let y = base.y;
+      if (side === 'right') x = base.x + PANEL_WIDTH + PANEL_GAP;
+      if (side === 'left') x = Math.max(0, base.x - PANEL_WIDTH - PANEL_GAP);
+      if (side === 'bottom') y = base.y + PANEL_HEIGHT + PANEL_GAP;
+      if (side === 'top') y = Math.max(0, base.y - PANEL_HEIGHT - PANEL_GAP);
+      const newPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker' };
+      return [...prev, newPanel];
+    });
+  };
+
+  return (
+    <div
+      ref={stageRef}
+      className="min-h-screen paper-background overflow-hidden relative"
+    >
+      <div className="style-toggle-container mb-4">
+        <button
+          onClick={() => setUseRetroStyle(!useRetroStyle)}
+          className="style-toggle-button"
+          title={useRetroStyle ? "Switch to Basic Font" : "Switch to Retro Digital"}
+        >
+          <span className="toggle-icon">{useRetroStyle ? "🔢" : "📱"}</span>
+          <span className="toggle-text">{useRetroStyle ? "Retro Digital" : "Basic Font"}</span>
+        </button>
+      </div>
+
+      <div className="world" style={{ position: 'absolute', inset: 0, transformOrigin: '50% 50%', transform: `scale(${scale})` }} ref={worldRef}>
+        {panels.map((p) => (
+          <PanelWrapper key={p.id} panel={p} onDragStart={handleDragStart} onDrag={handleDrag} onDragEnd={handleDragEnd} useRetroStyleGlobal={useRetroStyle} />
+        ))}
+        {plusState && (
+          <button
+            className="global-plus"
+            style={{ left: `${plusState.x}px`, top: `${plusState.y}px` }}
+            onClick={(e) => { e.stopPropagation(); createPanelAdjacent(plusState.panelId, plusState.side); }}
+            title={`Add panel ${plusState.side}`}
+          >
+            +
+          </button>
+        )}
       </div>
     </div>
   );

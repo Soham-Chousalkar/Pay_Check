@@ -118,7 +118,7 @@ function parseDateTime(val) {
   return isNaN(ms) ? null : ms;
 }
 
-function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal = true }) {
+function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal = true, onStateChange }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(null);
   const [rateInput, setRateInput] = useState("");
@@ -290,6 +290,15 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
       const live = startTimeRef.current ? (now - startTimeRef.current) / 1000 : 0;
       const totalSeconds = accumulatedSeconds + live;
       setEarnings(totalSeconds * dollarsPerSecond);
+      if (onStateChange) {
+        onStateChange({
+          isRunning: true,
+          hourlyRate,
+          accumulatedSeconds,
+          startTime,
+          endTime,
+        });
+      }
     }, 100);
 
     return () => {
@@ -306,6 +315,15 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
       const live = startTimeRef.current ? (now - startTimeRef.current) / 1000 : 0;
       const totalSeconds = accumulatedSeconds + live;
       setEarnings(totalSeconds * (hourlyRate / 3600));
+    }
+    if (onStateChange) {
+      onStateChange({
+        isRunning,
+        hourlyRate,
+        accumulatedSeconds,
+        startTime,
+        endTime,
+      });
     }
   }, [hourlyRate, accumulatedSeconds]);
 
@@ -501,7 +519,7 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   );
 }
 
-function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlobal }) {
+function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlobal, onStateChange }) {
   const wrapperRef = useRef(null);
   const dragStateRef = useRef({ dragging: false, offsetX: 0, offsetY: 0, startX: 0, startY: 0 });
 
@@ -541,7 +559,7 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
       onMouseDown={handleMouseDown}
     >
       <div className="main-panel smooth-transition relative mx-auto w-full h-full">
-        <EarningsPanel useRetroStyleGlobal={useRetroStyleGlobal} />
+        <EarningsPanel useRetroStyleGlobal={useRetroStyleGlobal} onStateChange={(state) => onStateChange(panel.id, state)} />
       </div>
     </div>
   );
@@ -555,26 +573,27 @@ export default function App() {
   const worldRef = useRef(null);
   const [isDraggingAny, setIsDraggingAny] = useState(false);
   const [plusState, setPlusState] = useState(null); // {panelId, side, x, y, neighborId?}
+  // Canvas management (temporary in-memory only; TODO: move to DB for persistence across reloads)
+  const [canvases, setCanvases] = useState([]);
+  const [activeCanvasId, setActiveCanvasId] = useState(null);
+  const [showCanvasLibrary, setShowCanvasLibrary] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('panelLayout');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPanels(parsed);
-          return;
-        }
-      } catch { }
-    }
+    // Initialize first canvas with one centered panel
     const x = Math.max(0, (window.innerWidth - PANEL_WIDTH) / 2);
     const y = Math.max(0, (window.innerHeight - PANEL_HEIGHT) / 2);
-    setPanels([{ id: `panel-${Date.now()}`, x, y, title: 'PayTracker' }]);
+    const firstPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker', state: undefined };
+    const firstCanvas = { id: `canvas-${Date.now()}`, name: 'Canvas 1', panels: [firstPanel], lastSnapshotAt: Date.now() };
+    setCanvases([firstCanvas]);
+    setActiveCanvasId(firstCanvas.id);
+    setPanels(firstCanvas.panels);
   }, []);
 
+  // Keep active canvas panels in sync with local in-memory canvases list
   useEffect(() => {
-    localStorage.setItem('panelLayout', JSON.stringify(panels));
-  }, [panels]);
+    if (!activeCanvasId) return;
+    setCanvases((prev) => prev.map(c => c.id === activeCanvasId ? { ...c, panels: panels } : c));
+  }, [panels, activeCanvasId]);
 
   const handleWheel = (e) => {
     const overInput = e.target.closest('input, [contenteditable="true"]');
@@ -775,6 +794,77 @@ export default function App() {
     setPanels(prev => [...prev, safePanel]);
   };
 
+  // Panel state bridge: EarningsPanel pushes its current state here so we can store in canvas
+  const handlePanelStateChange = (panelId, state) => {
+    setPanels(prev => prev.map(p => p.id === panelId ? { ...p, state } : p));
+  };
+
+  // Canvas operations
+  const snapshotActiveCanvas = () => {
+    setCanvases(prev => prev.map(c => c.id === activeCanvasId ? { ...c, panels: panels, lastSnapshotAt: Date.now() } : c));
+  };
+
+  const openCanvas = (canvasId) => {
+    if (canvasId === activeCanvasId) return;
+    // snapshot current
+    snapshotActiveCanvas();
+    // load target and adjust running panels to include elapsed since last snapshot
+    const target = canvases.find(c => c.id === canvasId);
+    if (!target) return;
+    const now = Date.now();
+    const deltaSec = Math.max(0, (now - (target.lastSnapshotAt || now)) / 1000);
+    const adjustedPanels = target.panels.map(p => {
+      if (!p.state) return p;
+      if (p.state.isRunning) {
+        return { ...p, state: { ...p.state, accumulatedSeconds: (p.state.accumulatedSeconds || 0) + deltaSec } };
+      }
+      return p;
+    });
+    setActiveCanvasId(canvasId);
+    setPanels(adjustedPanels);
+    setShowCanvasLibrary(false);
+  };
+
+  const createNewCanvas = () => {
+    snapshotActiveCanvas();
+    const x = Math.max(0, (window.innerWidth - PANEL_WIDTH) / 2);
+    const y = Math.max(0, (window.innerHeight - PANEL_HEIGHT) / 2);
+    const newPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker', state: undefined };
+    const newCanvas = { id: `canvas-${Date.now() + Math.random()}`, name: `Canvas ${canvases.length + 1}`, panels: [newPanel], lastSnapshotAt: Date.now() };
+    setCanvases(prev => [...prev, newCanvas]);
+    setActiveCanvasId(newCanvas.id);
+    setPanels(newCanvas.panels);
+    setShowCanvasLibrary(false);
+  };
+
+  const renameCanvas = (canvasId) => {
+    const name = window.prompt('Rename canvas');
+    if (name && name.trim()) {
+      setCanvases(prev => prev.map(c => c.id === canvasId ? { ...c, name: name.trim() } : c));
+    }
+  };
+
+  const deleteCanvas = (canvasId) => {
+    if (!window.confirm('Delete this canvas?')) return;
+    setCanvases(prev => {
+      const filtered = prev.filter(c => c.id !== canvasId);
+      if (filtered.length === 0) {
+        // create a fresh one
+        const x = Math.max(0, (window.innerWidth - PANEL_WIDTH) / 2);
+        const y = Math.max(0, (window.innerHeight - PANEL_HEIGHT) / 2);
+        const fresh = { id: `canvas-${Date.now()}`, name: 'Canvas 1', panels: [{ id: `panel-${Date.now()}`, x, y, title: 'PayTracker' }], lastSnapshotAt: Date.now() };
+        setActiveCanvasId(fresh.id);
+        setPanels(fresh.panels);
+        return [fresh];
+      }
+      const nextActive = filtered[0];
+      setActiveCanvasId(nextActive.id);
+      setPanels(nextActive.panels);
+      return filtered;
+    });
+    setShowCanvasLibrary(false);
+  };
+
   const insertBetweenGroups = (base, neighbor, side) => {
     const seamX = (base.x + PANEL_WIDTH + neighbor.x) / 2;
     const seamY = (base.y + PANEL_HEIGHT + neighbor.y) / 2;
@@ -904,6 +994,21 @@ export default function App() {
       ref={stageRef}
       className="min-h-screen paper-background overflow-hidden relative"
     >
+      {/* New Canvas button and Library toggle */}
+      <div className="style-toggle-container" style={{ left: '20px', right: 'auto' }}>
+        <button className="style-toggle-button" onClick={createNewCanvas} title="Create new canvas">
+          <span className="toggle-icon">➕</span>
+          <span className="toggle-text">New Canvas</span>
+        </button>
+      </div>
+
+      <div className="style-toggle-container" style={{ left: '20px', right: 'auto', top: '70px' }}>
+        <button className="style-toggle-button" onClick={() => setShowCanvasLibrary(!showCanvasLibrary)} title="Canvas Library">
+          <span className="toggle-icon">📚</span>
+          <span className="toggle-text">Library</span>
+        </button>
+      </div>
+
       <div className="style-toggle-container mb-4">
         <button
           onClick={() => setUseRetroStyle(!useRetroStyle)}
@@ -917,7 +1022,7 @@ export default function App() {
 
       <div className="world" style={{ position: 'absolute', inset: 0, transformOrigin: '50% 50%', transform: `scale(${scale})` }} ref={worldRef}>
         {panels.map((p) => (
-          <PanelWrapper key={p.id} panel={p} onDragStart={handleDragStart} onDrag={handleDrag} onDragEnd={handleDragEnd} useRetroStyleGlobal={useRetroStyle} />
+          <PanelWrapper key={p.id} panel={p} onDragStart={handleDragStart} onDrag={handleDrag} onDragEnd={handleDragEnd} useRetroStyleGlobal={useRetroStyle} onStateChange={handlePanelStateChange} />
         ))}
         {plusState && (
           <button
@@ -930,6 +1035,23 @@ export default function App() {
           </button>
         )}
       </div>
+
+      {showCanvasLibrary && (
+        <div className="canvas-library" style={{ position: 'fixed', top: '120px', left: '20px', width: '260px', background: 'rgba(240,240,240,0.85)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', borderRadius: '12px', padding: '10px', boxShadow: '8px 8px 16px rgba(0,0,0,0.15), -8px -8px 16px rgba(255,255,255,0.6)', zIndex: 50 }}>
+          <div style={{ fontWeight: 700, color: '#374151', marginBottom: '8px' }}>Canvases (temporary - not persisted; TODO DB)</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '60vh', overflowY: 'auto' }}>
+            {canvases.map(c => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '8px', background: activeCanvasId === c.id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
+                <span onClick={() => openCanvas(c.id)} style={{ color: '#374151', fontSize: '12px', fontWeight: 600 }}>{c.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button className="control-button" style={{ padding: '4px 6px' }} title="Rename" onClick={() => renameCanvas(c.id)}>⋯</button>
+                  <button className="control-button" style={{ padding: '4px 6px' }} title="Delete" onClick={() => deleteCanvas(c.id)}>🗑</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

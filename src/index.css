@@ -453,28 +453,45 @@ input[type="number"] {
 .global-plus {
     position: absolute;
     transform: translate(-50%, -50%);
-    width: 24px;
-    height: 24px;
+    width: 32px; /* Even larger for better visibility and click target */
+    height: 32px;
     border-radius: 50%;
     border: none;
-    background: rgba(240, 240, 240, 0.8);
+    background: rgba(240, 240, 240, 0.95); /* More opaque for stability */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow:
         6px 6px 12px rgba(0, 0, 0, 0.2),
-        -6px -6px 12px rgba(255, 255, 255, 0.3);
+        -6px -6px 12px rgba(255, 255, 255, 0.3),
+        0 0 0 3px rgba(255, 255, 255, 0.6); /* Thicker border for stability */
     color: #374151;
     font-weight: 700;
+    font-size: 20px; /* Larger plus sign */
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
     padding: 0;
     z-index: 20;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease; /* Slower transitions for stability */
+    will-change: transform, opacity; /* Performance optimization */
+    cursor: pointer;
+    opacity: 0.95; /* Slightly transparent */
+    animation: fadeIn 0.2s ease-in-out; /* Smooth appearance */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+    to { opacity: 0.95; transform: translate(-50%, -50%) scale(1); }
 }
 
 .global-plus:hover {
-    transform: translate(-50%, -50%) scale(1.05);
+    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+    box-shadow:
+        8px 8px 16px rgba(0, 0, 0, 0.25),
+        -8px -8px 16px rgba(255, 255, 255, 0.4),
+        0 0 0 3px rgba(255, 255, 255, 0.8);
 }
 
 .edge-bottom {

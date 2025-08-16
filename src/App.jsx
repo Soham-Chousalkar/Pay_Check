@@ -578,6 +578,19 @@ export default function App() {
   const [activeCanvasId, setActiveCanvasId] = useState(null);
   const [showCanvasLibrary, setShowCanvasLibrary] = useState(false);
 
+  // Inline rename state for canvases
+  const [editingCanvasId, setEditingCanvasId] = useState(null);
+  const [editingCanvasName, setEditingCanvasName] = useState("");
+  const inputRef = useRef(null);
+
+  // Focus input when editing
+  useEffect(() => {
+    if (editingCanvasId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingCanvasId]);
+
   useEffect(() => {
     // Initialize first canvas with one centered panel
     const x = Math.max(0, (window.innerWidth - PANEL_WIDTH) / 2);
@@ -1041,11 +1054,48 @@ export default function App() {
           <div style={{ fontWeight: 700, color: '#374151', marginBottom: '8px' }}>Canvases (temporary - not persisted; TODO DB)</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '60vh', overflowY: 'auto' }}>
             {canvases.map(c => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '8px', background: activeCanvasId === c.id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)', cursor: 'pointer' }}>
-                <span onClick={() => openCanvas(c.id)} style={{ color: '#374151', fontSize: '12px', fontWeight: 600 }}>{c.name}</span>
+              <div key={c.id}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', borderRadius: '8px', background: activeCanvasId === c.id ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.6)', cursor: 'pointer' }}
+                onClick={() => openCanvas(c.id)}
+              >
+                {editingCanvasId === c.id ? (
+                  <input
+                    ref={inputRef}
+                    value={editingCanvasName}
+                    onChange={e => setEditingCanvasName(e.target.value)}
+                    onBlur={() => {
+                      if (editingCanvasName.trim()) {
+                        setCanvases(prev => prev.map(cc => cc.id === c.id ? { ...cc, name: editingCanvasName.trim() } : cc));
+                      }
+                      setEditingCanvasId(null);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        if (editingCanvasName.trim()) {
+                          setCanvases(prev => prev.map(cc => cc.id === c.id ? { ...cc, name: editingCanvasName.trim() } : cc));
+                        }
+                        setEditingCanvasId(null);
+                      } else if (e.key === 'Escape') {
+                        setEditingCanvasId(null);
+                      }
+                    }}
+                    style={{ color: '#374151', fontSize: '12px', fontWeight: 600, width: '100%', border: '1px solid #ccc', borderRadius: '4px', padding: '2px 4px' }}
+                    onClick={e => e.stopPropagation()}
+                  />
+                ) : (
+                  <span
+                    style={{ color: '#374151', fontSize: '12px', fontWeight: 600 }}
+                    onDoubleClick={e => {
+                      e.stopPropagation();
+                      setEditingCanvasId(c.id);
+                      setEditingCanvasName(c.name);
+                    }}
+                  >
+                    {c.name}
+                  </span>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <button className="control-button" style={{ padding: '4px 6px' }} title="Rename" onClick={() => renameCanvas(c.id)}>⋯</button>
-                  <button className="control-button" style={{ padding: '4px 6px' }} title="Delete" onClick={() => deleteCanvas(c.id)}>🗑</button>
+                  <button className="control-button" style={{ padding: '4px 6px' }} title="Delete" onClick={e => { e.stopPropagation(); deleteCanvas(c.id); }}>🗑</button>
                 </div>
               </div>
             ))}

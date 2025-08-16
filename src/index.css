@@ -453,36 +453,56 @@ input[type="number"] {
 .global-plus {
     position: absolute;
     transform: translate(-50%, -50%);
-    width: 32px; /* Even larger for better visibility and click target */
-    height: 32px;
+    width: 40px;
+    /* Larger for better visibility and click target */
+    height: 40px;
     border-radius: 50%;
     border: none;
-    background: rgba(240, 240, 240, 0.95); /* More opaque for stability */
+    background: rgba(240, 240, 240, 0.97);
+    /* More opaque for stability */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow:
-        6px 6px 12px rgba(0, 0, 0, 0.2),
-        -6px -6px 12px rgba(255, 255, 255, 0.3),
-        0 0 0 3px rgba(255, 255, 255, 0.6); /* Thicker border for stability */
+        6px 6px 12px rgba(0, 0, 0, 0.25),
+        -6px -6px 12px rgba(255, 255, 255, 0.4),
+        0 0 0 4px rgba(255, 255, 255, 0.8);
+    /* Thicker border for stability */
     color: #374151;
-    font-weight: 700;
-    font-size: 20px; /* Larger plus sign */
+    font-weight: 800;
+    font-size: 24px;
+    /* Larger plus sign */
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
     padding: 0;
-    z-index: 20;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease; /* Slower transitions for stability */
-    will-change: transform, opacity; /* Performance optimization */
+    z-index: 40;
+    /* Higher z-index to ensure it stays on top */
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    /* Slower transitions for stability */
+    will-change: transform;
+    /* Performance optimization */
     cursor: pointer;
-    opacity: 0.95; /* Slightly transparent */
-    animation: fadeIn 0.2s ease-in-out; /* Smooth appearance */
+    opacity: 1;
+    /* Fully opaque */
+    animation: fadeIn 0.3s ease-in-out;
+    /* Smooth appearance */
+    user-select: none;
+    /* Prevent text selection */
+    -webkit-tap-highlight-color: transparent;
+    /* Remove tap highlight on mobile */
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-    to { opacity: 0.95; transform: translate(-50%, -50%) scale(1); }
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
 }
 
 .global-plus:hover {
@@ -492,6 +512,25 @@ input[type="number"] {
         8px 8px 16px rgba(0, 0, 0, 0.25),
         -8px -8px 16px rgba(255, 255, 255, 0.4),
         0 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+/* Preview panel styling */
+.preview-panel {
+    animation: fadePreview 0.3s ease-in-out;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+@keyframes fadePreview {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 0.6;
+        transform: scale(1);
+    }
 }
 
 .edge-bottom {

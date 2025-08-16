@@ -7,12 +7,13 @@ const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2;
 const ZOOM_STEP = 0.1;
 const EDGE_TRIGGER_RADIUS = 32;
-const EDGE_HYSTERESIS = 10; // Increased buffer to prevent flickering at boundaries
-const EDGE_LOCK_TIMEOUT = 500; // ms to lock an edge after selection to prevent rapid toggles
+const EDGE_HYSTERESIS = 20; // Increased buffer to prevent flickering at boundaries
+const EDGE_LOCK_TIMEOUT = 1000; // ms to lock an edge after selection to prevent rapid toggles
+const CLICK_PROTECTION_TIMEOUT = 1500; // ms to keep button visible during/after click
 const STICK_THRESHOLD = 16;
 const PLUS_BTN_SIZE = 24;
 const STUCK_EPSILON = 2; // tolerance for considering panels "stuck"
-const THROTTLE_DELAY = 100; // ms delay for throttling mouse movement
+const THROTTLE_DELAY = 150; // ms delay for throttling mouse movement (increased for stability)
 const POSITION_CHANGE_THRESHOLD = 8; // Minimum pixel change required to update button position
 
 const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false }) => {
@@ -523,17 +524,27 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   );
 }
 
-function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlobal, onStateChange }) {
+function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlobal, onStateChange, scale }) {
   const wrapperRef = useRef(null);
   const dragStateRef = useRef({ dragging: false, offsetX: 0, offsetY: 0, startX: 0, startY: 0 });
+  // Store the scale in a ref to avoid recomputation during dragging
+  const scaleRef = useRef(scale);
+
+  // Update scaleRef when scale prop changes
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
 
   const handleMouseDown = (e) => {
     const interactive = e.target.closest('input, button, [contenteditable="true"]');
     if (interactive) return;
     const rect = wrapperRef.current.getBoundingClientRect();
     dragStateRef.current.dragging = true;
-    dragStateRef.current.offsetX = e.clientX - rect.left;
-    dragStateRef.current.offsetY = e.clientY - rect.top;
+
+    // Calculate offset considering scale
+    const currentScale = scaleRef.current;
+    dragStateRef.current.offsetX = (e.clientX - rect.left) / currentScale;
+    dragStateRef.current.offsetY = (e.clientY - rect.top) / currentScale;
     dragStateRef.current.startX = panel.x;
     dragStateRef.current.startY = panel.y;
 
@@ -544,8 +555,11 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
 
   const handleMouseMove = (e) => {
     if (!dragStateRef.current.dragging) return;
-    const newX = e.clientX - dragStateRef.current.offsetX;
-    const newY = e.clientY - dragStateRef.current.offsetY;
+    const currentScale = scaleRef.current;
+
+    // Calculate new position adjusting for scale
+    const newX = e.clientX / currentScale - dragStateRef.current.offsetX;
+    const newY = e.clientY / currentScale - dragStateRef.current.offsetY;
     onDrag(panel.id, { x: newX, y: newY });
   };
 
@@ -706,27 +720,51 @@ export default function App() {
     return () => window.removeEventListener('mousemove', trackMousePosition);
   }, []);
 
-    // Track the last locked edge to prevent rapid toggling
+  // Track the last locked edge to prevent rapid toggling
   const edgeLockRef = useRef({
     side: null,
     panelId: null,
     lockedUntil: 0
   });
-  
+
+  // Track whether the plus button is being clicked to prevent hiding during interaction
+  const plusButtonInteractionRef = useRef({
+    isClicking: false,
+    protectedUntil: 0
+  });
+
   // Track mouse to position a single global plus button near the closest edge
   useEffect(() => {
     // Calculate plus button position based on mouse position
     const calculatePlusPosition = (e) => {
       // Store the current mouse position
-      const currentMousePos = { 
-        x: e.clientX, 
-        y: e.clientY 
+      const currentMousePos = {
+        x: e.clientX,
+        y: e.clientY
       };
+
+      // Calculate movement delta to detect large movements
+      const lastPos = lastMousePositionRef.current;
+      const deltaX = lastPos ? Math.abs(currentMousePos.x - lastPos.x) : 0;
+      const deltaY = lastPos ? Math.abs(currentMousePos.y - lastPos.y) : 0;
+      const largeMoveDetected = deltaX > 15 || deltaY > 15;
+
       lastMousePositionRef.current = currentMousePos;
-      
+
       // Check if we're interacting with an interactive element
-      const interactive = e.target && (e.target.closest && e.target.closest('input, [contenteditable="true"], button.global-plus'));
-      if (!worldRef.current || isDraggingAny || interactive) {
+      const isOverPlus = e.target && (e.target.closest && e.target.closest('button.global-plus'));
+      const interactive = e.target && (e.target.closest && e.target.closest('input, [contenteditable="true"]'));
+
+      // Check if we're in a click protection period
+      const now = Date.now();
+      const isProtected = plusButtonInteractionRef.current.protectedUntil > now;
+
+      if (isOverPlus) {
+        // When over the plus button, keep it visible and don't hide
+        return;
+      }
+
+      if (!worldRef.current || isDraggingAny || interactive || isProtected) {
         if (plusState !== null) {
           // Don't immediately hide the button - set a timer to hide it
           if (!activeTimerRef.current) {
@@ -744,7 +782,7 @@ export default function App() {
                   }
                 }));
               }
-              
+
               setPlusState(null);
               lastPlusStateRef.current = null;
               stablePositionRef.current = null;
@@ -755,27 +793,37 @@ export default function App() {
         }
         return;
       }
-      
+
       // Clear any active hide timer since we're moving
       if (activeTimerRef.current) {
         clearTimeout(activeTimerRef.current);
         activeTimerRef.current = null;
       }
-      
+
       const rect = worldRef.current.getBoundingClientRect();
       const localX = (e.clientX - rect.left) / scale;
       const localY = (e.clientY - rect.top) / scale;
 
       // Check if we're still within the locked edge's panel and side
-      const now = Date.now();
-      const isLocked = edgeLockRef.current.lockedUntil > now;
-      
+      const currentTime = Date.now();
+      const isLocked = edgeLockRef.current.lockedUntil > currentTime;
+
       // Apply hysteresis: If we already have a plus state, use a larger radius to keep it
-      const currentRadius = EDGE_TRIGGER_RADIUS + (plusState ? EDGE_HYSTERESIS * 2 : 0);
+      // Use even more hysteresis when the button is being clicked
+      const isClickingPlus = plusButtonInteractionRef.current.isClicking;
+      let currentRadius = EDGE_TRIGGER_RADIUS;
+      if (plusState) {
+        currentRadius += isClickingPlus ? EDGE_HYSTERESIS * 4 : EDGE_HYSTERESIS * 2;
+      }
+
+      // If a large movement was detected and we're not clicking, reduce radius for faster response
+      if (largeMoveDetected && !isClickingPlus && !isProtected) {
+        currentRadius = Math.max(EDGE_TRIGGER_RADIUS, currentRadius * 0.7);
+      }
 
       let best = null; // {panelId, side, dist}
       let bestDist = Infinity;
-      
+
       // First pass - check if we should maintain the current edge due to lock
       if (isLocked && plusState) {
         const lockedPanel = panels.find(p => p.id === edgeLockRef.current.panelId);
@@ -783,33 +831,33 @@ export default function App() {
           const side = edgeLockRef.current.side;
           let dist;
           let withinBounds = false;
-          
+
           // Calculate distance to the locked edge
           if (side === 'left') {
             dist = Math.abs(localX - lockedPanel.x);
-            withinBounds = localY >= lockedPanel.y - currentRadius && 
-                          localY <= lockedPanel.y + PANEL_HEIGHT + currentRadius;
+            withinBounds = localY >= lockedPanel.y - currentRadius &&
+              localY <= lockedPanel.y + PANEL_HEIGHT + currentRadius;
           } else if (side === 'right') {
             dist = Math.abs(localX - (lockedPanel.x + PANEL_WIDTH));
-            withinBounds = localY >= lockedPanel.y - currentRadius && 
-                          localY <= lockedPanel.y + PANEL_HEIGHT + currentRadius;
+            withinBounds = localY >= lockedPanel.y - currentRadius &&
+              localY <= lockedPanel.y + PANEL_HEIGHT + currentRadius;
           } else if (side === 'top') {
             dist = Math.abs(localY - lockedPanel.y);
-            withinBounds = localX >= lockedPanel.x - currentRadius && 
-                          localX <= lockedPanel.x + PANEL_WIDTH + currentRadius;
+            withinBounds = localX >= lockedPanel.x - currentRadius &&
+              localX <= lockedPanel.x + PANEL_WIDTH + currentRadius;
           } else if (side === 'bottom') {
             dist = Math.abs(localY - (lockedPanel.y + PANEL_HEIGHT));
-            withinBounds = localX >= lockedPanel.x - currentRadius && 
-                          localX <= lockedPanel.x + PANEL_WIDTH + currentRadius;
+            withinBounds = localX >= lockedPanel.x - currentRadius &&
+              localX <= lockedPanel.x + PANEL_WIDTH + currentRadius;
           }
-          
+
           // Use a much larger radius for locked edges to prevent flickering
-          const lockRadius = currentRadius * 1.5;
-          
+          const lockRadius = currentRadius * 2;
+
           if (dist !== undefined && dist <= lockRadius && withinBounds) {
-            best = { 
-              panelId: lockedPanel.id, 
-              side: side, 
+            best = {
+              panelId: lockedPanel.id,
+              side: side,
               dist: dist,
               locked: true
             };
@@ -817,7 +865,7 @@ export default function App() {
           }
         }
       }
-      
+
       // Only proceed to check other edges if we don't have a locked edge match
       if (!best) {
         // Second pass - find the best edge
@@ -826,27 +874,27 @@ export default function App() {
           const rightDist = Math.abs(localX - (p.x + PANEL_WIDTH));
           const topDist = Math.abs(localY - p.y);
           const bottomDist = Math.abs(localY - (p.y + PANEL_HEIGHT));
-  
+
           // More generous boundaries for determining if we're near a panel edge
           const withinY = localY >= p.y - currentRadius && localY <= p.y + PANEL_HEIGHT + currentRadius;
           const withinX = localX >= p.x - currentRadius && localX <= p.x + PANEL_WIDTH + currentRadius;
-  
+
           // Only consider edges that are actually close to the mouse
           if (withinY && leftDist <= currentRadius && leftDist < bestDist) {
             best = { panelId: p.id, side: 'left', dist: leftDist };
             bestDist = leftDist;
           }
-          
+
           if (withinY && rightDist <= currentRadius && rightDist < bestDist) {
             best = { panelId: p.id, side: 'right', dist: rightDist };
             bestDist = rightDist;
           }
-          
+
           if (withinX && topDist <= currentRadius && topDist < bestDist) {
             best = { panelId: p.id, side: 'top', dist: topDist };
             bestDist = topDist;
           }
-          
+
           if (withinX && bottomDist <= currentRadius && bottomDist < bestDist) {
             best = { panelId: p.id, side: 'bottom', dist: bottomDist };
             bestDist = bottomDist;
@@ -861,37 +909,37 @@ export default function App() {
           const currentEdge = plusState.side;
           const currentPanelId = plusState.panelId;
           const currentPanel = panels.find(p => p.id === currentPanelId);
-          
+
           if (currentPanel) {
             let distFromCurrentEdge;
             let withinCurrentBounds = false;
-            
+
             if (currentEdge === 'left') {
               distFromCurrentEdge = Math.abs(localX - currentPanel.x);
-              withinCurrentBounds = localY >= currentPanel.y - currentRadius * 1.5 && 
-                                   localY <= currentPanel.y + PANEL_HEIGHT + currentRadius * 1.5;
+              withinCurrentBounds = localY >= currentPanel.y - currentRadius * 1.5 &&
+                localY <= currentPanel.y + PANEL_HEIGHT + currentRadius * 1.5;
             } else if (currentEdge === 'right') {
               distFromCurrentEdge = Math.abs(localX - (currentPanel.x + PANEL_WIDTH));
-              withinCurrentBounds = localY >= currentPanel.y - currentRadius * 1.5 && 
-                                   localY <= currentPanel.y + PANEL_HEIGHT + currentRadius * 1.5;
+              withinCurrentBounds = localY >= currentPanel.y - currentRadius * 1.5 &&
+                localY <= currentPanel.y + PANEL_HEIGHT + currentRadius * 1.5;
             } else if (currentEdge === 'top') {
               distFromCurrentEdge = Math.abs(localY - currentPanel.y);
-              withinCurrentBounds = localX >= currentPanel.x - currentRadius * 1.5 && 
-                                   localX <= currentPanel.x + PANEL_WIDTH + currentRadius * 1.5;
+              withinCurrentBounds = localX >= currentPanel.x - currentRadius * 1.5 &&
+                localX <= currentPanel.x + PANEL_WIDTH + currentRadius * 1.5;
             } else if (currentEdge === 'bottom') {
               distFromCurrentEdge = Math.abs(localY - (currentPanel.y + PANEL_HEIGHT));
-              withinCurrentBounds = localX >= currentPanel.x - currentRadius * 1.5 && 
-                                   localX <= currentPanel.x + PANEL_WIDTH + currentRadius * 1.5;
+              withinCurrentBounds = localX >= currentPanel.x - currentRadius * 1.5 &&
+                localX <= currentPanel.x + PANEL_WIDTH + currentRadius * 1.5;
             }
-            
+
             // If we're still reasonably close to the current edge, keep the button
-            if (distFromCurrentEdge !== undefined && 
-                distFromCurrentEdge <= currentRadius * 2 && 
-                withinCurrentBounds) {
+            if (distFromCurrentEdge !== undefined &&
+              distFromCurrentEdge <= currentRadius * 2 &&
+              withinCurrentBounds) {
               return; // Keep current state
             }
           }
-          
+
           // If we get here, we're far enough away to hide the button
           if (!activeTimerRef.current) {
             activeTimerRef.current = setTimeout(() => {
@@ -908,7 +956,7 @@ export default function App() {
                   }
                 }));
               }
-              
+
               setPlusState(null);
               lastPlusStateRef.current = null;
               stablePositionRef.current = null;
@@ -923,7 +971,7 @@ export default function App() {
       if (best) {
         const base = panels.find(p => p.id === best.panelId);
         if (!base) return;
-        
+
         const neighbor = memoizedFindNeighborOnSide(base, best.side);
         let x = base.x + PANEL_WIDTH / 2;
         let y = base.y + PANEL_HEIGHT / 2;
@@ -946,29 +994,29 @@ export default function App() {
             const ovRight = Math.min(base.x + PANEL_WIDTH, neighbor.x + PANEL_WIDTH);
             x = (ovLeft + ovRight) / 2;
           }
-          
-          const newState = { 
-            panelId: best.panelId, 
-            side: best.side, 
-            x, 
-            y, 
+
+          const newState = {
+            panelId: best.panelId,
+            side: best.side,
+            x,
+            y,
             neighborId: neighbor.id,
-            timestamp: Date.now() 
+            timestamp: Date.now()
           };
-          
+
           // Only update if position has changed significantly or it's a different edge
           const significantChange = stablePositionRef.current && (
-            Math.abs(stablePositionRef.current.x - x) > POSITION_CHANGE_THRESHOLD || 
+            Math.abs(stablePositionRef.current.x - x) > POSITION_CHANGE_THRESHOLD ||
             Math.abs(stablePositionRef.current.y - y) > POSITION_CHANGE_THRESHOLD
           );
-          
-          const differentEdge = !stablePositionRef.current || 
-                               best.panelId !== stablePositionRef.current.panelId || 
-                               best.side !== stablePositionRef.current.side;
-          
+
+          const differentEdge = !stablePositionRef.current ||
+            best.panelId !== stablePositionRef.current.panelId ||
+            best.side !== stablePositionRef.current.side;
+
           if (significantChange || differentEdge || !plusState) {
             stablePositionRef.current = newState;
-            
+
             // If we're changing edges, lock the new edge
             if (differentEdge) {
               edgeLockRef.current = {
@@ -977,11 +1025,11 @@ export default function App() {
                 lockedUntil: Date.now() + EDGE_LOCK_TIMEOUT
               };
             }
-            
+
             // DEBUG: Track button becoming visible or changing
             const prevSide = plusState?.side;
             const newSide = best.side;
-            
+
             // If side changed or button was previously invisible
             if (prevSide !== newSide || !plusState) {
               // If previous side exists, mark it invisible
@@ -996,7 +1044,7 @@ export default function App() {
                   }
                 }));
               }
-              
+
               // Mark new side visible
               setButtonStats(prev => ({
                 ...prev,
@@ -1008,7 +1056,7 @@ export default function App() {
                 }
               }));
             }
-            
+
             setPlusState(newState);
             lastPlusStateRef.current = newState;
           }
@@ -1020,28 +1068,28 @@ export default function App() {
           if (best.side === 'bottom') y = base.y + PANEL_HEIGHT + (offset);
           if (best.side === 'left' || best.side === 'right') y = base.y + PANEL_HEIGHT / 2;
           if (best.side === 'top' || best.side === 'bottom') x = base.x + PANEL_WIDTH / 2;
-          
-          const newState = { 
-            panelId: best.panelId, 
-            side: best.side, 
-            x, 
+
+          const newState = {
+            panelId: best.panelId,
+            side: best.side,
+            x,
             y,
-            timestamp: Date.now() 
+            timestamp: Date.now()
           };
-          
+
           // Only update if position has changed significantly or it's a different edge
           const significantChange = stablePositionRef.current && (
-            Math.abs(stablePositionRef.current.x - x) > POSITION_CHANGE_THRESHOLD || 
+            Math.abs(stablePositionRef.current.x - x) > POSITION_CHANGE_THRESHOLD ||
             Math.abs(stablePositionRef.current.y - y) > POSITION_CHANGE_THRESHOLD
           );
-          
-          const differentEdge = !stablePositionRef.current || 
-                               best.panelId !== stablePositionRef.current.panelId || 
-                               best.side !== stablePositionRef.current.side;
-          
+
+          const differentEdge = !stablePositionRef.current ||
+            best.panelId !== stablePositionRef.current.panelId ||
+            best.side !== stablePositionRef.current.side;
+
           if (significantChange || differentEdge || !plusState) {
             stablePositionRef.current = newState;
-            
+
             // If we're changing edges, lock the new edge
             if (differentEdge) {
               edgeLockRef.current = {
@@ -1050,11 +1098,11 @@ export default function App() {
                 lockedUntil: Date.now() + EDGE_LOCK_TIMEOUT
               };
             }
-            
+
             // DEBUG: Track button becoming visible or changing
             const prevSide = plusState?.side;
             const newSide = best.side;
-            
+
             // If side changed or button was previously invisible
             if (prevSide !== newSide || !plusState) {
               // If previous side exists, mark it invisible
@@ -1069,7 +1117,7 @@ export default function App() {
                   }
                 }));
               }
-              
+
               // Mark new side visible
               setButtonStats(prev => ({
                 ...prev,
@@ -1081,17 +1129,17 @@ export default function App() {
                 }
               }));
             }
-            
+
             setPlusState(newState);
             lastPlusStateRef.current = newState;
           }
         }
       }
     };
-    
+
     // Use throttling for smoother experience
     let lastCallTime = 0;
-    
+
     const throttledHandleMove = (e) => {
       const now = Date.now();
       if (now - lastCallTime >= THROTTLE_DELAY) {
@@ -1103,7 +1151,7 @@ export default function App() {
     const el = stageRef.current;
     if (!el) return;
     el.addEventListener('mousemove', throttledHandleMove);
-    
+
     return () => {
       el.removeEventListener('mousemove', throttledHandleMove);
       if (activeTimerRef.current) {
@@ -1386,6 +1434,68 @@ export default function App() {
     });
   };
 
+  // State to track the preview panel when hovering over the plus button
+  const [previewPanel, setPreviewPanel] = useState(null);
+
+  // Function to check if there's space to add a new panel on the specified side
+  const hasSpaceForPanel = useCallback((panelId, side) => {
+    const panel = panels.find(p => p.id === panelId);
+    if (!panel) return false;
+
+    // Calculate the position where the new panel would be placed
+    let newX = panel.x;
+    let newY = panel.y;
+
+    if (side === 'right') newX = panel.x + PANEL_WIDTH + PANEL_GAP;
+    if (side === 'left') newX = panel.x - PANEL_WIDTH - PANEL_GAP;
+    if (side === 'bottom') newY = panel.y + PANEL_HEIGHT + PANEL_GAP;
+    if (side === 'top') newY = panel.y - PANEL_HEIGHT - PANEL_GAP;
+
+    // Check if new position would be off-screen
+    if (newX < 0 || newY < 0) return false;
+
+    // Check if new position would overlap with existing panels
+    const wouldOverlap = panels.some(p => {
+      if (p.id === panelId) return false; // Skip the panel itself
+
+      // Simple box collision detection
+      const overlap = !(newX + PANEL_WIDTH <= p.x ||
+        p.x + PANEL_WIDTH <= newX ||
+        newY + PANEL_HEIGHT <= p.y ||
+        p.y + PANEL_HEIGHT <= newY);
+
+      return overlap;
+    });
+
+    return !wouldOverlap;
+  }, [panels]);
+
+  // Show preview panel when hovering over the plus button
+  const handlePlusMouseEnter = useCallback((panelId, side) => {
+    const panel = panels.find(p => p.id === panelId);
+    if (!panel) return;
+
+    let x = panel.x;
+    let y = panel.y;
+
+    if (side === 'right') x = panel.x + PANEL_WIDTH + PANEL_GAP;
+    if (side === 'left') x = panel.x - PANEL_WIDTH - PANEL_GAP;
+    if (side === 'bottom') y = panel.y + PANEL_HEIGHT + PANEL_GAP;
+    if (side === 'top') y = panel.y - PANEL_HEIGHT - PANEL_GAP;
+
+    setPreviewPanel({
+      x,
+      y,
+      panelId,
+      side
+    });
+  }, [panels]);
+
+  // Hide preview panel when leaving the plus button
+  const handlePlusMouseLeave = useCallback(() => {
+    setPreviewPanel(null);
+  }, []);
+
   return (
     <div
       ref={stageRef}
@@ -1565,13 +1675,74 @@ export default function App() {
 
       <div className="world" style={{ position: 'absolute', inset: 0, transformOrigin: '50% 50%', transform: `scale(${scale})` }} ref={worldRef}>
         {panels.map((p) => (
-          <PanelWrapper key={p.id} panel={p} onDragStart={handleDragStart} onDrag={handleDrag} onDragEnd={handleDragEnd} useRetroStyleGlobal={useRetroStyle} onStateChange={handlePanelStateChange} />
+          <PanelWrapper
+            key={p.id}
+            panel={p}
+            onDragStart={handleDragStart}
+            onDrag={handleDrag}
+            onDragEnd={handleDragEnd}
+            useRetroStyleGlobal={useRetroStyle}
+            onStateChange={handlePanelStateChange}
+            scale={scale}
+          />
         ))}
-        {plusState && (
+
+        {/* Preview panel when hovering over plus button */}
+        {previewPanel && (
+          <div
+            className="preview-panel"
+            style={{
+              position: 'absolute',
+              left: `${previewPanel.x}px`,
+              top: `${previewPanel.y}px`,
+              width: `${PANEL_WIDTH}px`,
+              height: `${PANEL_HEIGHT}px`,
+              background: 'rgba(240, 240, 240, 0.15)',
+              backdropFilter: 'blur(5px)',
+              WebkitBackdropFilter: 'blur(5px)',
+              borderRadius: '20px',
+              boxShadow: '20px 20px 60px rgba(0, 0, 0, 0.08), -20px -20px 60px rgba(255, 255, 255, 0.1)',
+              border: '2px dashed rgba(100, 100, 100, 0.3)',
+              zIndex: 19
+            }}
+          />
+        )}
+
+        {/* Show plus button only if there's space for a panel in that direction */}
+        {plusState && hasSpaceForPanel(plusState.panelId, plusState.side) && (
           <button
             className="global-plus"
             style={{ left: `${plusState.x}px`, top: `${plusState.y}px` }}
-            onClick={(e) => { e.stopPropagation(); handleAdd(plusState.panelId, plusState.side, plusState.neighborId); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+
+              // Set protection period to prevent button from disappearing during/after click
+              plusButtonInteractionRef.current.isClicking = true;
+              plusButtonInteractionRef.current.protectedUntil = Date.now() + CLICK_PROTECTION_TIMEOUT;
+
+              // Add the panel
+              handleAdd(plusState.panelId, plusState.side, plusState.neighborId);
+              setPreviewPanel(null); // Hide preview after adding panel
+
+              // Reset clicking state after a short delay
+              setTimeout(() => {
+                plusButtonInteractionRef.current.isClicking = false;
+              }, 200);
+            }}
+            onMouseDown={(e) => {
+              // Additional protection against button disappearing during click
+              e.stopPropagation();
+              plusButtonInteractionRef.current.isClicking = true;
+            }}
+            onMouseUp={() => {
+              // Reset clicking state
+              setTimeout(() => {
+                plusButtonInteractionRef.current.isClicking = false;
+              }, 100);
+            }}
+            onMouseEnter={() => handlePlusMouseEnter(plusState.panelId, plusState.side)}
+            onMouseLeave={handlePlusMouseLeave}
             title={`Add panel ${plusState.side}`}
           >
             +

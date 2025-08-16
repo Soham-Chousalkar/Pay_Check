@@ -7,9 +7,13 @@ const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2;
 const ZOOM_STEP = 0.1;
 const EDGE_TRIGGER_RADIUS = 32;
+const EDGE_HYSTERESIS = 10; // Increased buffer to prevent flickering at boundaries
+const EDGE_LOCK_TIMEOUT = 500; // ms to lock an edge after selection to prevent rapid toggles
 const STICK_THRESHOLD = 16;
 const PLUS_BTN_SIZE = 24;
 const STUCK_EPSILON = 2; // tolerance for considering panels "stuck"
+const THROTTLE_DELAY = 100; // ms delay for throttling mouse movement
+const POSITION_CHANGE_THRESHOLD = 8; // Minimum pixel change required to update button position
 
 const RetroDigitalNumber = memo(({ value, className = "", showDollarSign = false }) => {
   const digits = useMemo(() => String(value).split(''), [value]);
@@ -565,6 +569,16 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
   );
 }
 
+// Simple debounce function to prevent rapid state changes
+// Defined outside of component to avoid recreation on each render
+const debounce = (func, delay) => {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+};
+
 export default function App() {
   const [panels, setPanels] = useState([]);
   const [scale, setScale] = useState(1);
@@ -573,6 +587,18 @@ export default function App() {
   const worldRef = useRef(null);
   const [isDraggingAny, setIsDraggingAny] = useState(false);
   const [plusState, setPlusState] = useState(null); // {panelId, side, x, y, neighborId?}
+  const lastPlusStateRef = useRef(null); // Store last stable plus state to prevent flickering
+
+  // DEBUG: Tracking variables for button flickering
+  const [showDebugOverlay, setShowDebugOverlay] = useState(true);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [buttonStats, setButtonStats] = useState({
+    top: { visible: false, toggleCount: 0, lastToggle: 0 },
+    right: { visible: false, toggleCount: 0, lastToggle: 0 },
+    bottom: { visible: false, toggleCount: 0, lastToggle: 0 },
+    left: { visible: false, toggleCount: 0, lastToggle: 0 }
+  });
+
   // Canvas management (temporary in-memory only; TODO: move to DB for persistence across reloads)
   const [canvases, setCanvases] = useState([]);
   const [activeCanvasId, setActiveCanvasId] = useState(null);
@@ -660,88 +686,431 @@ export default function App() {
     return candidate;
   };
 
+  // Stable refs for position tracking - defined at component level
+  const stablePositionRef = useRef(null);
+  const activeTimerRef = useRef(null);
+  const lastMousePositionRef = useRef({ x: 0, y: 0 });
+
+  // Memoize the function to find neighbor on side to avoid recreating it on every render
+  const memoizedFindNeighborOnSide = useCallback((base, side) => {
+    return findNeighborOnSide(base, side);
+  }, [panels]); // Only depends on panels
+
+  // Track mouse position globally for debugging
+  useEffect(() => {
+    const trackMousePosition = (e) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener('mousemove', trackMousePosition);
+    return () => window.removeEventListener('mousemove', trackMousePosition);
+  }, []);
+
+    // Track the last locked edge to prevent rapid toggling
+  const edgeLockRef = useRef({
+    side: null,
+    panelId: null,
+    lockedUntil: 0
+  });
+  
   // Track mouse to position a single global plus button near the closest edge
   useEffect(() => {
-    const handleMove = (e) => {
-      const interactive = e.target && (e.target.closest && e.target.closest('input, [contenteditable="true"], button'));
+    // Calculate plus button position based on mouse position
+    const calculatePlusPosition = (e) => {
+      // Store the current mouse position
+      const currentMousePos = { 
+        x: e.clientX, 
+        y: e.clientY 
+      };
+      lastMousePositionRef.current = currentMousePos;
+      
+      // Check if we're interacting with an interactive element
+      const interactive = e.target && (e.target.closest && e.target.closest('input, [contenteditable="true"], button.global-plus'));
       if (!worldRef.current || isDraggingAny || interactive) {
-        setPlusState(null);
+        if (plusState !== null) {
+          // Don't immediately hide the button - set a timer to hide it
+          if (!activeTimerRef.current) {
+            activeTimerRef.current = setTimeout(() => {
+              // DEBUG: Track button becoming invisible
+              if (plusState) {
+                const side = plusState.side;
+                setButtonStats(prev => ({
+                  ...prev,
+                  [side]: {
+                    ...prev[side],
+                    visible: false,
+                    toggleCount: prev[side].toggleCount + 1,
+                    lastToggle: Date.now()
+                  }
+                }));
+              }
+              
+              setPlusState(null);
+              lastPlusStateRef.current = null;
+              stablePositionRef.current = null;
+              activeTimerRef.current = null;
+              // Don't reset edge lock here to prevent immediate reappearance
+            }, 300); // Increased delay before hiding
+          }
+        }
         return;
       }
+      
+      // Clear any active hide timer since we're moving
+      if (activeTimerRef.current) {
+        clearTimeout(activeTimerRef.current);
+        activeTimerRef.current = null;
+      }
+      
       const rect = worldRef.current.getBoundingClientRect();
       const localX = (e.clientX - rect.left) / scale;
       const localY = (e.clientY - rect.top) / scale;
 
+      // Check if we're still within the locked edge's panel and side
+      const now = Date.now();
+      const isLocked = edgeLockRef.current.lockedUntil > now;
+      
+      // Apply hysteresis: If we already have a plus state, use a larger radius to keep it
+      const currentRadius = EDGE_TRIGGER_RADIUS + (plusState ? EDGE_HYSTERESIS * 2 : 0);
+
       let best = null; // {panelId, side, dist}
-      for (const p of panels) {
-        const leftDist = Math.abs(localX - p.x);
-        const rightDist = Math.abs(localX - (p.x + PANEL_WIDTH));
-        const topDist = Math.abs(localY - p.y);
-        const bottomDist = Math.abs(localY - (p.y + PANEL_HEIGHT));
-
-        const withinY = localY >= p.y - EDGE_TRIGGER_RADIUS && localY <= p.y + PANEL_HEIGHT + EDGE_TRIGGER_RADIUS;
-        const withinX = localX >= p.x - EDGE_TRIGGER_RADIUS && localX <= p.x + PANEL_WIDTH + EDGE_TRIGGER_RADIUS;
-
-        const candidates = [];
-        if (withinY) candidates.push({ panelId: p.id, side: 'left', dist: leftDist });
-        if (withinY) candidates.push({ panelId: p.id, side: 'right', dist: rightDist });
-        if (withinX) candidates.push({ panelId: p.id, side: 'top', dist: topDist });
-        if (withinX) candidates.push({ panelId: p.id, side: 'bottom', dist: bottomDist });
-
-        for (const c of candidates) {
-          if (c.dist <= EDGE_TRIGGER_RADIUS) {
-            if (!best || c.dist < best.dist) best = c;
+      let bestDist = Infinity;
+      
+      // First pass - check if we should maintain the current edge due to lock
+      if (isLocked && plusState) {
+        const lockedPanel = panels.find(p => p.id === edgeLockRef.current.panelId);
+        if (lockedPanel) {
+          const side = edgeLockRef.current.side;
+          let dist;
+          let withinBounds = false;
+          
+          // Calculate distance to the locked edge
+          if (side === 'left') {
+            dist = Math.abs(localX - lockedPanel.x);
+            withinBounds = localY >= lockedPanel.y - currentRadius && 
+                          localY <= lockedPanel.y + PANEL_HEIGHT + currentRadius;
+          } else if (side === 'right') {
+            dist = Math.abs(localX - (lockedPanel.x + PANEL_WIDTH));
+            withinBounds = localY >= lockedPanel.y - currentRadius && 
+                          localY <= lockedPanel.y + PANEL_HEIGHT + currentRadius;
+          } else if (side === 'top') {
+            dist = Math.abs(localY - lockedPanel.y);
+            withinBounds = localX >= lockedPanel.x - currentRadius && 
+                          localX <= lockedPanel.x + PANEL_WIDTH + currentRadius;
+          } else if (side === 'bottom') {
+            dist = Math.abs(localY - (lockedPanel.y + PANEL_HEIGHT));
+            withinBounds = localX >= lockedPanel.x - currentRadius && 
+                          localX <= lockedPanel.x + PANEL_WIDTH + currentRadius;
+          }
+          
+          // Use a much larger radius for locked edges to prevent flickering
+          const lockRadius = currentRadius * 1.5;
+          
+          if (dist !== undefined && dist <= lockRadius && withinBounds) {
+            best = { 
+              panelId: lockedPanel.id, 
+              side: side, 
+              dist: dist,
+              locked: true
+            };
+            bestDist = dist;
+          }
+        }
+      }
+      
+      // Only proceed to check other edges if we don't have a locked edge match
+      if (!best) {
+        // Second pass - find the best edge
+        for (const p of panels) {
+          const leftDist = Math.abs(localX - p.x);
+          const rightDist = Math.abs(localX - (p.x + PANEL_WIDTH));
+          const topDist = Math.abs(localY - p.y);
+          const bottomDist = Math.abs(localY - (p.y + PANEL_HEIGHT));
+  
+          // More generous boundaries for determining if we're near a panel edge
+          const withinY = localY >= p.y - currentRadius && localY <= p.y + PANEL_HEIGHT + currentRadius;
+          const withinX = localX >= p.x - currentRadius && localX <= p.x + PANEL_WIDTH + currentRadius;
+  
+          // Only consider edges that are actually close to the mouse
+          if (withinY && leftDist <= currentRadius && leftDist < bestDist) {
+            best = { panelId: p.id, side: 'left', dist: leftDist };
+            bestDist = leftDist;
+          }
+          
+          if (withinY && rightDist <= currentRadius && rightDist < bestDist) {
+            best = { panelId: p.id, side: 'right', dist: rightDist };
+            bestDist = rightDist;
+          }
+          
+          if (withinX && topDist <= currentRadius && topDist < bestDist) {
+            best = { panelId: p.id, side: 'top', dist: topDist };
+            bestDist = topDist;
+          }
+          
+          if (withinX && bottomDist <= currentRadius && bottomDist < bestDist) {
+            best = { panelId: p.id, side: 'bottom', dist: bottomDist };
+            bestDist = bottomDist;
           }
         }
       }
 
+      // If we don't have a best candidate but we had a previous position, keep it for stability
       if (!best) {
-        setPlusState(null);
+        if (plusState) {
+          // Only hide if we're far from the current edge
+          const currentEdge = plusState.side;
+          const currentPanelId = plusState.panelId;
+          const currentPanel = panels.find(p => p.id === currentPanelId);
+          
+          if (currentPanel) {
+            let distFromCurrentEdge;
+            let withinCurrentBounds = false;
+            
+            if (currentEdge === 'left') {
+              distFromCurrentEdge = Math.abs(localX - currentPanel.x);
+              withinCurrentBounds = localY >= currentPanel.y - currentRadius * 1.5 && 
+                                   localY <= currentPanel.y + PANEL_HEIGHT + currentRadius * 1.5;
+            } else if (currentEdge === 'right') {
+              distFromCurrentEdge = Math.abs(localX - (currentPanel.x + PANEL_WIDTH));
+              withinCurrentBounds = localY >= currentPanel.y - currentRadius * 1.5 && 
+                                   localY <= currentPanel.y + PANEL_HEIGHT + currentRadius * 1.5;
+            } else if (currentEdge === 'top') {
+              distFromCurrentEdge = Math.abs(localY - currentPanel.y);
+              withinCurrentBounds = localX >= currentPanel.x - currentRadius * 1.5 && 
+                                   localX <= currentPanel.x + PANEL_WIDTH + currentRadius * 1.5;
+            } else if (currentEdge === 'bottom') {
+              distFromCurrentEdge = Math.abs(localY - (currentPanel.y + PANEL_HEIGHT));
+              withinCurrentBounds = localX >= currentPanel.x - currentRadius * 1.5 && 
+                                   localX <= currentPanel.x + PANEL_WIDTH + currentRadius * 1.5;
+            }
+            
+            // If we're still reasonably close to the current edge, keep the button
+            if (distFromCurrentEdge !== undefined && 
+                distFromCurrentEdge <= currentRadius * 2 && 
+                withinCurrentBounds) {
+              return; // Keep current state
+            }
+          }
+          
+          // If we get here, we're far enough away to hide the button
+          if (!activeTimerRef.current) {
+            activeTimerRef.current = setTimeout(() => {
+              // DEBUG: Track button becoming invisible
+              if (plusState) {
+                const side = plusState.side;
+                setButtonStats(prev => ({
+                  ...prev,
+                  [side]: {
+                    ...prev[side],
+                    visible: false,
+                    toggleCount: prev[side].toggleCount + 1,
+                    lastToggle: Date.now()
+                  }
+                }));
+              }
+              
+              setPlusState(null);
+              lastPlusStateRef.current = null;
+              stablePositionRef.current = null;
+              activeTimerRef.current = null;
+            }, 200);
+          }
+        }
         return;
       }
 
-      const base = panels.find(p => p.id === best.panelId);
-      if (!base) { setPlusState(null); return; }
-      const neighbor = findNeighborOnSide(base, best.side);
-      let x = base.x + PANEL_WIDTH / 2;
-      let y = base.y + PANEL_HEIGHT / 2;
-      const offset = 16; // desired offset from edge
+      // If we have a best candidate, calculate position
+      if (best) {
+        const base = panels.find(p => p.id === best.panelId);
+        if (!base) return;
+        
+        const neighbor = memoizedFindNeighborOnSide(base, best.side);
+        let x = base.x + PANEL_WIDTH / 2;
+        let y = base.y + PANEL_HEIGHT / 2;
+        const offset = 16; // desired offset from edge
 
-      if (neighbor) {
-        // Position between stuck panels
-        if (best.side === 'left' || best.side === 'right') {
-          const baseRight = base.x + PANEL_WIDTH;
-          const neighborLeft = neighbor.x;
-          x = (baseRight + neighborLeft) / 2;
-          const ovTop = Math.max(base.y, neighbor.y);
-          const ovBottom = Math.min(base.y + PANEL_HEIGHT, neighbor.y + PANEL_HEIGHT);
-          y = (ovTop + ovBottom) / 2;
+        if (neighbor) {
+          // Position between stuck panels
+          if (best.side === 'left' || best.side === 'right') {
+            const baseRight = base.x + PANEL_WIDTH;
+            const neighborLeft = neighbor.x;
+            x = (baseRight + neighborLeft) / 2;
+            const ovTop = Math.max(base.y, neighbor.y);
+            const ovBottom = Math.min(base.y + PANEL_HEIGHT, neighbor.y + PANEL_HEIGHT);
+            y = (ovTop + ovBottom) / 2;
+          } else {
+            const baseBottom = base.y + PANEL_HEIGHT;
+            const neighborTop = neighbor.y;
+            y = (baseBottom + neighborTop) / 2;
+            const ovLeft = Math.max(base.x, neighbor.x);
+            const ovRight = Math.min(base.x + PANEL_WIDTH, neighbor.x + PANEL_WIDTH);
+            x = (ovLeft + ovRight) / 2;
+          }
+          
+          const newState = { 
+            panelId: best.panelId, 
+            side: best.side, 
+            x, 
+            y, 
+            neighborId: neighbor.id,
+            timestamp: Date.now() 
+          };
+          
+          // Only update if position has changed significantly or it's a different edge
+          const significantChange = stablePositionRef.current && (
+            Math.abs(stablePositionRef.current.x - x) > POSITION_CHANGE_THRESHOLD || 
+            Math.abs(stablePositionRef.current.y - y) > POSITION_CHANGE_THRESHOLD
+          );
+          
+          const differentEdge = !stablePositionRef.current || 
+                               best.panelId !== stablePositionRef.current.panelId || 
+                               best.side !== stablePositionRef.current.side;
+          
+          if (significantChange || differentEdge || !plusState) {
+            stablePositionRef.current = newState;
+            
+            // If we're changing edges, lock the new edge
+            if (differentEdge) {
+              edgeLockRef.current = {
+                side: best.side,
+                panelId: best.panelId,
+                lockedUntil: Date.now() + EDGE_LOCK_TIMEOUT
+              };
+            }
+            
+            // DEBUG: Track button becoming visible or changing
+            const prevSide = plusState?.side;
+            const newSide = best.side;
+            
+            // If side changed or button was previously invisible
+            if (prevSide !== newSide || !plusState) {
+              // If previous side exists, mark it invisible
+              if (prevSide) {
+                setButtonStats(prev => ({
+                  ...prev,
+                  [prevSide]: {
+                    ...prev[prevSide],
+                    visible: false,
+                    toggleCount: prev[prevSide].toggleCount + 1,
+                    lastToggle: Date.now()
+                  }
+                }));
+              }
+              
+              // Mark new side visible
+              setButtonStats(prev => ({
+                ...prev,
+                [newSide]: {
+                  ...prev[newSide],
+                  visible: true,
+                  toggleCount: prev[newSide].toggleCount + 1,
+                  lastToggle: Date.now()
+                }
+              }));
+            }
+            
+            setPlusState(newState);
+            lastPlusStateRef.current = newState;
+          }
         } else {
-          const baseBottom = base.y + PANEL_HEIGHT;
-          const neighborTop = neighbor.y;
-          y = (baseBottom + neighborTop) / 2;
-          const ovLeft = Math.max(base.x, neighbor.x);
-          const ovRight = Math.min(base.x + PANEL_WIDTH, neighbor.x + PANEL_WIDTH);
-          x = (ovLeft + ovRight) / 2;
+          // Position outside selected edge
+          if (best.side === 'left') x = base.x - (offset);
+          if (best.side === 'right') x = base.x + PANEL_WIDTH + (offset);
+          if (best.side === 'top') y = base.y - (offset);
+          if (best.side === 'bottom') y = base.y + PANEL_HEIGHT + (offset);
+          if (best.side === 'left' || best.side === 'right') y = base.y + PANEL_HEIGHT / 2;
+          if (best.side === 'top' || best.side === 'bottom') x = base.x + PANEL_WIDTH / 2;
+          
+          const newState = { 
+            panelId: best.panelId, 
+            side: best.side, 
+            x, 
+            y,
+            timestamp: Date.now() 
+          };
+          
+          // Only update if position has changed significantly or it's a different edge
+          const significantChange = stablePositionRef.current && (
+            Math.abs(stablePositionRef.current.x - x) > POSITION_CHANGE_THRESHOLD || 
+            Math.abs(stablePositionRef.current.y - y) > POSITION_CHANGE_THRESHOLD
+          );
+          
+          const differentEdge = !stablePositionRef.current || 
+                               best.panelId !== stablePositionRef.current.panelId || 
+                               best.side !== stablePositionRef.current.side;
+          
+          if (significantChange || differentEdge || !plusState) {
+            stablePositionRef.current = newState;
+            
+            // If we're changing edges, lock the new edge
+            if (differentEdge) {
+              edgeLockRef.current = {
+                side: best.side,
+                panelId: best.panelId,
+                lockedUntil: Date.now() + EDGE_LOCK_TIMEOUT
+              };
+            }
+            
+            // DEBUG: Track button becoming visible or changing
+            const prevSide = plusState?.side;
+            const newSide = best.side;
+            
+            // If side changed or button was previously invisible
+            if (prevSide !== newSide || !plusState) {
+              // If previous side exists, mark it invisible
+              if (prevSide) {
+                setButtonStats(prev => ({
+                  ...prev,
+                  [prevSide]: {
+                    ...prev[prevSide],
+                    visible: false,
+                    toggleCount: prev[prevSide].toggleCount + 1,
+                    lastToggle: Date.now()
+                  }
+                }));
+              }
+              
+              // Mark new side visible
+              setButtonStats(prev => ({
+                ...prev,
+                [newSide]: {
+                  ...prev[newSide],
+                  visible: true,
+                  toggleCount: prev[newSide].toggleCount + 1,
+                  lastToggle: Date.now()
+                }
+              }));
+            }
+            
+            setPlusState(newState);
+            lastPlusStateRef.current = newState;
+          }
         }
-        setPlusState({ panelId: best.panelId, side: best.side, x, y, neighborId: neighbor.id });
-      } else {
-        // Position outside selected edge
-        if (best.side === 'left') x = base.x - (offset);
-        if (best.side === 'right') x = base.x + PANEL_WIDTH + (offset);
-        if (best.side === 'top') y = base.y - (offset);
-        if (best.side === 'bottom') y = base.y + PANEL_HEIGHT + (offset);
-        if (best.side === 'left' || best.side === 'right') y = base.y + PANEL_HEIGHT / 2;
-        if (best.side === 'top' || best.side === 'bottom') x = base.x + PANEL_WIDTH / 2;
-        setPlusState({ panelId: best.panelId, side: best.side, x, y });
+      }
+    };
+    
+    // Use throttling for smoother experience
+    let lastCallTime = 0;
+    
+    const throttledHandleMove = (e) => {
+      const now = Date.now();
+      if (now - lastCallTime >= THROTTLE_DELAY) {
+        lastCallTime = now;
+        calculatePlusPosition(e);
       }
     };
 
     const el = stageRef.current;
     if (!el) return;
-    el.addEventListener('mousemove', handleMove);
-    return () => el.removeEventListener('mousemove', handleMove);
-  }, [panels, scale, isDraggingAny]);
+    el.addEventListener('mousemove', throttledHandleMove);
+    
+    return () => {
+      el.removeEventListener('mousemove', throttledHandleMove);
+      if (activeTimerRef.current) {
+        clearTimeout(activeTimerRef.current);
+      }
+    };
+  }, [panels, scale, isDraggingAny, plusState, memoizedFindNeighborOnSide]);
 
   const handleDrag = (id, pos) => {
     setPanels((prev) => prev.map((p) => (p.id === id ? { ...p, ...pos } : p)));
@@ -1002,11 +1371,172 @@ export default function App() {
     });
   };
 
+  // Toggle debug overlay
+  const toggleDebugOverlay = () => {
+    setShowDebugOverlay(prev => !prev);
+  };
+
+  // Reset debug stats
+  const resetDebugStats = () => {
+    setButtonStats({
+      top: { visible: false, toggleCount: 0, lastToggle: 0 },
+      right: { visible: false, toggleCount: 0, lastToggle: 0 },
+      bottom: { visible: false, toggleCount: 0, lastToggle: 0 },
+      left: { visible: false, toggleCount: 0, lastToggle: 0 }
+    });
+  };
+
   return (
     <div
       ref={stageRef}
       className="min-h-screen paper-background overflow-hidden relative"
     >
+      {/* Debug Overlay */}
+      {showDebugOverlay && (
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: 'white',
+          padding: '10px',
+          borderRadius: '5px',
+          zIndex: 9999,
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          width: '400px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <h3 style={{ margin: 0, fontSize: '14px' }}>Debug: + Button Flicker Tracking</h3>
+            <div>
+              <button
+                onClick={resetDebugStats}
+                style={{ marginRight: '5px', background: '#555', border: 'none', color: 'white', padding: '2px 5px', borderRadius: '3px' }}
+              >
+                Reset
+              </button>
+              <button
+                onClick={toggleDebugOverlay}
+                style={{ background: '#555', border: 'none', color: 'white', padding: '2px 5px', borderRadius: '3px' }}
+              >
+                Hide
+              </button>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '5px' }}>
+            <strong>Mouse:</strong> X: {mousePos.x}, Y: {mousePos.y}
+          </div>
+
+          {/* Panel edge distances */}
+          <div style={{ marginBottom: '10px', fontSize: '11px' }}>
+            <strong>Edge Distances:</strong>
+            {panels.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '3px' }}>
+                {panels.map(panel => {
+                  // Calculate distances to each edge
+                  const rect = worldRef.current?.getBoundingClientRect();
+                  if (!rect) return null;
+
+                  const localX = (mousePos.x - rect.left) / scale;
+                  const localY = (mousePos.y - rect.top) / scale;
+
+                  const leftDist = Math.abs(localX - panel.x);
+                  const rightDist = Math.abs(localX - (panel.x + PANEL_WIDTH));
+                  const topDist = Math.abs(localY - panel.y);
+                  const bottomDist = Math.abs(localY - (panel.y + PANEL_HEIGHT));
+
+                  const withinY = localY >= panel.y - EDGE_TRIGGER_RADIUS && localY <= panel.y + PANEL_HEIGHT + EDGE_TRIGGER_RADIUS;
+                  const withinX = localX >= panel.x - EDGE_TRIGGER_RADIUS && localX <= panel.x + PANEL_WIDTH + EDGE_TRIGGER_RADIUS;
+
+                  const isWithinTriggerRadius = (dist, inRange) =>
+                    dist <= EDGE_TRIGGER_RADIUS && inRange;
+
+                  return (
+                    <div key={panel.id} style={{
+                      padding: '3px',
+                      backgroundColor: 'rgba(100, 100, 100, 0.3)',
+                      borderRadius: '3px'
+                    }}>
+                      <div>Panel {panel.id.split('-')[1]}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '2px' }}>
+                        <div style={{
+                          backgroundColor: isWithinTriggerRadius(leftDist, withinY) ? 'rgba(255, 255, 0, 0.3)' : 'transparent',
+                          padding: '2px'
+                        }}>
+                          L: {Math.round(leftDist)}
+                        </div>
+                        <div style={{
+                          backgroundColor: isWithinTriggerRadius(rightDist, withinY) ? 'rgba(255, 255, 0, 0.3)' : 'transparent',
+                          padding: '2px'
+                        }}>
+                          R: {Math.round(rightDist)}
+                        </div>
+                        <div style={{
+                          backgroundColor: isWithinTriggerRadius(topDist, withinX) ? 'rgba(255, 255, 0, 0.3)' : 'transparent',
+                          padding: '2px'
+                        }}>
+                          T: {Math.round(topDist)}
+                        </div>
+                        <div style={{
+                          backgroundColor: isWithinTriggerRadius(bottomDist, withinX) ? 'rgba(255, 255, 0, 0.3)' : 'transparent',
+                          padding: '2px'
+                        }}>
+                          B: {Math.round(bottomDist)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div>No panels</div>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
+            {Object.entries(buttonStats).map(([side, stats]) => (
+              <div key={side} style={{
+                padding: '5px',
+                backgroundColor: stats.visible ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.2)',
+                borderRadius: '3px'
+              }}>
+                <div><strong>{side.charAt(0).toUpperCase() + side.slice(1)}:</strong> {stats.visible ? 'Visible' : 'Hidden'}</div>
+                <div>Toggles: {stats.toggleCount}</div>
+                <div>Last: {stats.lastToggle ? new Date(stats.lastToggle).toLocaleTimeString() : 'Never'}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: '5px', fontSize: '10px', opacity: 0.7 }}>
+            Current Button Side: {plusState?.side || 'None'}
+          </div>
+        </div>
+      )}
+
+      {/* Debug Toggle Button */}
+      <div style={{
+        position: 'fixed',
+        top: '10px',
+        right: '10px',
+        zIndex: 9999,
+        display: showDebugOverlay ? 'none' : 'block'
+      }}>
+        <button
+          onClick={toggleDebugOverlay}
+          style={{
+            background: 'rgba(0, 0, 0, 0.7)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            padding: '5px 10px'
+          }}
+        >
+          Debug
+        </button>
+      </div>
+
       {/* New Canvas button and Library toggle */}
       <div className="style-toggle-container" style={{ left: '20px', right: 'auto' }}>
         <button className="style-toggle-button" onClick={createNewCanvas} title="Create new canvas">

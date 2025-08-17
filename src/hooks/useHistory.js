@@ -34,17 +34,20 @@ export function useHistory(maxHistoryLength = 50) {
       restoreFunc
     };
     
-    // Add to history stack, enforcing max length
-    setPast(prev => {
-      const newPast = [...prev, historyEntry];
-      if (newPast.length > maxHistoryLength) {
-        return newPast.slice(newPast.length - maxHistoryLength);
-      }
-      return newPast;
-    });
-    
-    // Clear redo stack when a new action is performed
-    setFuture([]);
+    // Use setTimeout to break potential update cycles
+    setTimeout(() => {
+      // Add to history stack, enforcing max length
+      setPast(prev => {
+        const newPast = [...prev, historyEntry];
+        if (newPast.length > maxHistoryLength) {
+          return newPast.slice(newPast.length - maxHistoryLength);
+        }
+        return newPast;
+      });
+      
+      // Clear redo stack when a new action is performed
+      setFuture([]);
+    }, 0);
   }, [isUndoRedoing, maxHistoryLength]);
   
   /**

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PANEL_WIDTH, PANEL_HEIGHT } from '../utils/panelUtils';
 
 /**
@@ -18,17 +18,34 @@ export function useCanvas() {
     const y = Math.max(0, (window.innerHeight - PANEL_HEIGHT) / 2);
     const firstPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker', state: undefined };
     const firstCanvas = { id: `canvas-${Date.now()}`, name: 'Canvas 1', panels: [firstPanel], lastSnapshotAt: Date.now() };
-    console.log('Initializing first panel:', firstPanel);
-    console.log('Initializing first canvas:', firstCanvas);
+    // Removed console logs for performance
     setCanvases([firstCanvas]);
     setActiveCanvasId(firstCanvas.id);
     setPanels(firstCanvas.panels);
   }, []);
 
   // Keep active canvas panels in sync with local in-memory canvases list
+  const activePanelsRef = useRef(null);
+  
   useEffect(() => {
-    if (!activeCanvasId) return;
-    setCanvases((prev) => prev.map(c => c.id === activeCanvasId ? { ...c, panels: panels } : c));
+    if (!activeCanvasId || !panels) return;
+    
+    // Use a ref to track when panels change to avoid circular updates
+    const panelsStringified = JSON.stringify(panels);
+    
+    // Only update if the panels have actually changed significantly
+    if (activePanelsRef.current !== panelsStringified) {
+      activePanelsRef.current = panelsStringified;
+      
+      // Use setTimeout to break the update cycle
+      const timeoutId = setTimeout(() => {
+        setCanvases((prev) => prev.map(c => 
+          c.id === activeCanvasId ? { ...c, panels: panels } : c
+        ));
+      }, 0);
+      
+      return () => clearTimeout(timeoutId);
+    }
   }, [panels, activeCanvasId]);
 
   const snapshotActiveCanvas = () => {

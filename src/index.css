@@ -386,6 +386,17 @@ input[type="number"] {
     justify-content: center;
 }
 
+.new-canvas-btn {
+    min-width: unset !important;
+    width: 40px;
+    height: 40px;
+    padding: 8px !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .style-toggle-button:hover {
     transform: translateY(-2px);
     box-shadow:
@@ -453,44 +464,34 @@ input[type="number"] {
 .global-plus {
     position: absolute;
     transform: translate(-50%, -50%);
-    width: 40px;
-    /* Larger for better visibility and click target */
-    height: 40px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: none;
-    background: rgba(240, 240, 240, 0.97);
-    /* More opaque for stability */
+    background: rgba(220, 220, 220, 1);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow:
-        6px 6px 12px rgba(0, 0, 0, 0.25),
-        -6px -6px 12px rgba(255, 255, 255, 0.4),
-        0 0 0 4px rgba(255, 255, 255, 0.8);
-    /* Thicker border for stability */
-    color: #374151;
-    font-weight: 800;
-    font-size: 24px;
-    /* Larger plus sign */
+        3px 3px 6px rgba(0, 0, 0, 0.4),
+        -3px -3px 6px rgba(255, 255, 255, 0.6),
+        0 0 0 2px rgba(255, 255, 255, 0.9),
+        0 0 6px rgba(0, 0, 0, 0.3);
+    color: #222222;
+    font-weight: 900;
+    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
     padding: 0;
-    z-index: 40;
-    /* Higher z-index to ensure it stays on top */
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-    /* Slower transitions for stability */
-    will-change: transform;
-    /* Performance optimization */
+    z-index: 100;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+    will-change: transform, opacity;
     cursor: pointer;
-    opacity: 1;
-    /* Fully opaque */
+    opacity: 0;
     animation: fadeIn 0.3s ease-in-out;
-    /* Smooth appearance */
     user-select: none;
-    /* Prevent text selection */
     -webkit-tap-highlight-color: transparent;
-    /* Remove tap highlight on mobile */
 }
 
 @keyframes fadeIn {
@@ -505,13 +506,19 @@ input[type="number"] {
     }
 }
 
+/* Make the plus button visible when near borders */
+.global-plus.visible {
+    opacity: 1;
+}
+
 .global-plus:hover {
     transform: translate(-50%, -50%) scale(1.15);
     opacity: 1;
     box-shadow:
-        8px 8px 16px rgba(0, 0, 0, 0.25),
-        -8px -8px 16px rgba(255, 255, 255, 0.4),
-        0 0 0 3px rgba(255, 255, 255, 0.8);
+        6px 6px 12px rgba(0, 0, 0, 0.5),
+        -6px -6px 12px rgba(255, 255, 255, 0.7),
+        0 0 0 3px rgba(255, 255, 255, 1),
+        0 0 15px rgba(0, 0, 0, 0.6);
 }
 
 /* Preview panel styling */
@@ -549,4 +556,132 @@ input[type="number"] {
     right: -20px;
     top: 50%;
     transform: translateY(-50%);
+}
+
+/* Panel delete button */
+.panel-delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(220, 50, 50, 0.8);
+    color: white;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    opacity: 0.8;
+}
+
+.panel-delete-btn:hover {
+    background: rgba(220, 50, 50, 1);
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+/* Delete confirmation modal */
+.delete-confirm-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 200;
+    min-width: 200px;
+    text-align: center;
+}
+
+.delete-confirm-modal p {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.delete-confirm-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.delete-confirm-buttons button {
+    padding: 5px 15px;
+    border: none;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-confirm-buttons button:first-child {
+    background: #e74c3c;
+    color: white;
+}
+
+.delete-confirm-buttons button:last-child {
+    background: #ecf0f1;
+    color: #333;
+}
+
+/* History controls (undo/redo) */
+.history-controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.history-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(240, 240, 240, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: none;
+    box-shadow:
+        4px 4px 8px rgba(0, 0, 0, 0.2),
+        -4px -4px 8px rgba(255, 255, 255, 0.5);
+    color: #374151;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.history-button:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow:
+        6px 6px 12px rgba(0, 0, 0, 0.25),
+        -6px -6px 12px rgba(255, 255, 255, 0.6);
+}
+
+.history-button:active:not(.disabled) {
+    transform: translateY(0);
+    box-shadow:
+        inset 4px 4px 8px rgba(0, 0, 0, 0.2),
+        inset -4px -4px 8px rgba(255, 255, 255, 0.5);
+}
+
+.history-button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow:
+        2px 2px 4px rgba(0, 0, 0, 0.1),
+        -2px -2px 4px rgba(255, 255, 255, 0.3);
 }

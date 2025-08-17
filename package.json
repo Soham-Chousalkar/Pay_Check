@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --port 3000 --open",
     "build": "vite build",
-    "preview": "vite preview --port 3000 --open"
+    "preview": "vite preview --port 3000 --open",
+    "serve": "serve -s dist -l 3000"
   },
   "dependencies": {
     "react": "^19.1.1",

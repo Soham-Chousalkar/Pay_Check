@@ -17,6 +17,7 @@ import {
 export function usePanelManagement(panels, setPanels, addToHistory = null) {
   const [isDraggingAny, setIsDraggingAny] = useState(false);
   const [previewPanel, setPreviewPanel] = useState(null);
+  const [dragStartPositions, setDragStartPositions] = useState({}); // Track drag start positions
 
   /**
    * Find a neighbor panel on a specific side
@@ -131,14 +132,21 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
       );
     }
     
+    // Log debug info for significant moves
+    const panel = panels.find(p => p.id === id);
+    if (panel && (Math.abs(panel.x - pos.x) > 5 || Math.abs(panel.y - pos.y) > 5)) {
+      console.log(`DEBUG: Panel ${id} moved to (${pos.x}, ${pos.y})`);
+    }
+    
     setPanels((prev) => prev.map((p) => (p.id === id ? { ...p, ...pos } : p)));
   }, [setPanels, panels, addToHistory]);
 
   /**
    * Handle drag start
    */
-  const handleDragStart = useCallback(() => {
+  const handleDragStart = useCallback((id, pos) => {
     setIsDraggingAny(true);
+    setDragStartPositions(prev => ({ ...prev, [id]: pos }));
   }, []);
 
   /**
@@ -146,6 +154,28 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
    */
   const handleDragEnd = useCallback((id) => {
     setIsDraggingAny(false);
+    
+    // Get the final position and calculate movement
+    const finalPanel = panels.find(p => p.id === id);
+    const startPos = dragStartPositions[id];
+    
+    if (finalPanel && startPos) {
+      const deltaX = finalPanel.x - startPos.x;
+      const deltaY = finalPanel.y - startPos.y;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      if (distance > 5) { // Only log significant movements
+        console.log(`DEBUG: Panel ${id} moved from (${startPos.x}, ${startPos.y}) to (${finalPanel.x}, ${finalPanel.y}) - Distance: ${distance.toFixed(1)}px`);
+      }
+      
+      // Clear the start position
+      setDragStartPositions(prev => {
+        const newPositions = { ...prev };
+        delete newPositions[id];
+        return newPositions;
+      });
+    }
+    
     setPanels((prev) => {
       const me = prev.find(p => p.id === id);
       if (!me) return prev;
@@ -183,147 +213,31 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
       if (!didSnap) return prev;
       return prev.map(p => p.id === id ? { ...p, x: snapX, y: snapY } : p);
     });
-  }, [setPanels]);
+  }, [setPanels, panels, dragStartPositions]);
 
   /**
    * Add a panel adjacent to another panel
    */
   const handleAddPanel = useCallback((panelId, side, neighborId) => {
-    const base = panels.find(p => p.id === panelId);
-    if (!base) return;
+    console.log(`DEBUG: handleAddPanel called with panelId: ${panelId}, side: ${side}, neighborId: ${neighborId}`);
     
-    if (neighborId) {
-      const neighbor = panels.find(p => p.id === neighborId);
-      if (!neighbor) return;
-      
-      // Insert between panels
-      const seamX = (base.x + PANEL_WIDTH + neighbor.x) / 2;
-      const seamY = (base.y + PANEL_HEIGHT + neighbor.y) / 2;
-      
-      // Collect groups by BFS over stuck edges along axis
-      const visited = new Set();
-      const adjH = new Map();
-      const adjV = new Map();
-      
-      for (const a of panels) {
-        adjH.set(a.id, []);
-        adjV.set(a.id, []);
-      }
-      
-      for (let i = 0; i < panels.length; i++) {
-        for (let j = i + 1; j < panels.length; j++) {
-          const a = panels[i], b = panels[j];
-          if (isStuckHorizontal(a, b)) { adjH.get(a.id).push(b.id); adjH.get(b.id).push(a.id); }
-          if (isStuckVertical(a, b)) { adjV.get(a.id).push(b.id); adjV.get(b.id).push(a.id); }
-        }
-      }
-      
-      const useH = side === 'left' || side === 'right';
-      const graph = useH ? adjH : adjV;
-      
-      const bfs = (startId) => {
-        const q = [startId];
-        const res = new Set([startId]);
-        while (q.length) {
-          const cur = q.shift();
-          for (const nb of graph.get(cur) || []) {
-            if (!res.has(nb)) { res.add(nb); q.push(nb); }
-          }
-        }
-        return res;
-      };
-      
-      const leftSet = bfs(base.id);
-      const rightSet = bfs(neighbor.id);
-  
-      const leftArr = panels.filter(p => leftSet.has(p.id));
-      const rightArr = panels.filter(p => rightSet.has(p.id));
-  
-      const leftSize = leftArr.length;
-      const rightSize = rightArr.length;
-      const denom = Math.max(1, leftSize + rightSize);
-      const deltaLeft = (useH ? PANEL_WIDTH : PANEL_HEIGHT) * (rightSize / denom);
-      const deltaRight = (useH ? PANEL_WIDTH : PANEL_HEIGHT) * (leftSize / denom);
-  
-      // Apply proposed shifts
-      let next = panels.map(p => ({ ...p }));
-      if (useH) {
-        for (const p of next) {
-          if (leftSet.has(p.id)) p.x = Math.max(0, p.x - deltaLeft);
-          if (rightSet.has(p.id)) p.x = p.x + deltaRight;
-        }
-      } else {
-        for (const p of next) {
-          if (leftSet.has(p.id)) p.y = Math.max(0, p.y - deltaLeft);
-          if (rightSet.has(p.id)) p.y = p.y + deltaRight;
-        }
-      }
-  
-      // Resolve overlaps by pushing further outward from seam
-      const seamLine = useH ? seamX : seamY;
-      let guard = 0;
-      const sideOf = (p) => useH ? (p.x + PANEL_WIDTH / 2 <= seamLine ? 'left' : 'right') : (p.y + PANEL_HEIGHT / 2 <= seamLine ? 'left' : 'right');
-      
-      while (guard < 200) {
-        guard += 1;
-        let fixedAny = false;
-        for (let i = 0; i < next.length; i++) {
-          for (let j = i + 1; j < next.length; j++) {
-            const a = next[i], b = next[j];
-            if (!rectsOverlap(a, b)) continue;
-            const sideA = sideOf(a); const sideB = sideOf(b);
-            const move = PANEL_GAP;
-            if (useH) {
-              if (sideA === 'left' && sideB !== 'left') { a.x = Math.max(0, a.x - move); fixedAny = true; }
-              else if (sideB === 'left' && sideA !== 'left') { b.x = Math.max(0, b.x - move); fixedAny = true; }
-              else if (sideA === 'right') { a.x = a.x + move; fixedAny = true; }
-              else if (sideB === 'right') { b.x = b.x + move; fixedAny = true; }
-            } else {
-              if (sideA === 'left' && sideB !== 'left') { a.y = Math.max(0, a.y - move); fixedAny = true; }
-              else if (sideB === 'left' && sideA !== 'left') { b.y = Math.max(0, b.y - move); fixedAny = true; }
-              else if (sideA === 'right') { a.y = a.y + move; fixedAny = true; }
-              else if (sideB === 'right') { b.y = b.y + move; fixedAny = true; }
-            }
-          }
-        }
-        if (!fixedAny) break;
-      }
-  
-      // Finally, place new panel at seam
-      const newPanel = { id: `panel-${Date.now()}`, x: base.x, y: base.y, title: 'PayTracker' };
-      if (useH) {
-        newPanel.x = neighbor.x - PANEL_GAP - PANEL_WIDTH;
-        newPanel.y = (Math.max(base.y, neighbor.y) + Math.min(base.y + PANEL_HEIGHT, neighbor.y + PANEL_HEIGHT)) / 2 - PANEL_HEIGHT / 2;
-      } else {
-        newPanel.y = neighbor.y - PANEL_GAP - PANEL_HEIGHT;
-        newPanel.x = (Math.max(base.x, neighbor.x) + Math.min(base.x + PANEL_WIDTH, neighbor.x + PANEL_WIDTH)) / 2 - PANEL_WIDTH / 2;
-      }
-  
-      next.push(newPanel);
-      
-      // Record history for adding panel
-      if (addToHistory) {
-        const prevPanels = [...panels];
-        
-        addToHistory(
-          'ADD_PANEL',
-          { panels: prevPanels },
-          { panels: next },
-          (state) => setPanels(state.panels)
-        );
-      }
-      
-      setPanels(next);
+    const base = panels.find(p => p.id === panelId);
+    if (!base) {
+      console.log(`DEBUG: Base panel not found for ID: ${panelId}`);
       return;
     }
     
-    // Default adjacent add
+    console.log(`DEBUG: Base panel found:`, base);
+    
     // Get current panels before update
     const prevPanels = [...panels];
     
     setPanels((prev) => {
       const baseNow = prev.find((p) => p.id === panelId);
-      if (!baseNow) return prev;
+      if (!baseNow) {
+        console.log(`DEBUG: Base panel not found in current panels for ID: ${panelId}`);
+        return prev;
+      }
       
       let x = baseNow.x;
       let y = baseNow.y;
@@ -335,6 +249,9 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
       
       const newPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker' };
       const nextPanels = [...prev, newPanel];
+      
+      console.log(`DEBUG: New panel created:`, newPanel);
+      console.log(`DEBUG: Total panels after creation: ${nextPanels.length}`);
       
       // Record history for adding panel
       if (addToHistory) {
@@ -348,7 +265,7 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
       
       return nextPanels;
     });
-  }, [panels, setPanels]);
+  }, [panels, setPanels, addToHistory]);
 
   /**
    * Handle panel state changes from EarningsPanel
@@ -356,7 +273,17 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
   const handlePanelStateChange = useCallback((panelId, state) => {
     // Get current panels before update
     const prevPanels = [...panels];
+    const currentPanel = prevPanels.find(p => p.id === panelId);
+    
+    // Check if state has actually changed to prevent unnecessary updates
+    if (currentPanel && currentPanel.state && JSON.stringify(currentPanel.state) === JSON.stringify(state)) {
+      return; // No change, don't update
+    }
+    
     const nextPanels = prevPanels.map(p => p.id === panelId ? { ...p, state } : p);
+    
+    // Log debug info only when state actually changes
+    console.log(`DEBUG: Panel ${panelId} state updated:`, state);
     
     // Record history for state change but only if not already in an undo/redo operation
     if (addToHistory) {

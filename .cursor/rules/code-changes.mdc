@@ -1,0 +1,14 @@
+---
+description:
+
+- Only make changes to the feature or function I'm referring to, do not touch any other piece of code.
+
+- When making changes, only touch the specific feature or function I'm referring to, do not modify any unrelated code, no matter how tempting. Before writing any code, take the time to fully understand the goal. If anything is unclear, ask questions until the requirement is absolutely clear. Approach every task like a smart, focused agent. Keep changes minimal, precise, and purposeful. Avoid unnecessary complexity, and only act when you're confident about the intent.
+
+- Keep asking questions until you're absolutely sure about the goal.
+
+- If you're not sure about the goal, ask me for clarification.
+
+globs:
+alwaysApply: true
+---

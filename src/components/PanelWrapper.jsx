@@ -52,7 +52,7 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
     document.addEventListener('mouseup', handleMouseUp);
 
     // Notify parent
-    onDragStart();
+    onDragStart(panel.id, { x: panel.x, y: panel.y });
   };
 
   const handleMouseMove = (e) => {
@@ -90,7 +90,6 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
 
   // State for showing delete button
   const [showDeleteButton, setShowDeleteButton] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const deleteButtonRef = useRef(null);
 
   // Handler for delete panel button
@@ -98,22 +97,13 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
     e.stopPropagation();
     e.preventDefault();
 
-    // Check if the panel has been edited (has state data)
-    if (panel.state &&
-      (panel.state.title !== 'PayTracker' ||
-        panel.state.hourlyRate ||
-        panel.state.accumulatedSeconds > 0)) {
-      setShowConfirmDelete(true);
-    } else {
-      // Delete without confirmation if not edited
-      handlePanelDelete(panel.id);
-    }
+    // Delete panel immediately without confirmation
+    handlePanelDelete(panel.id);
   };
 
   // For deleting panels we use the onDelete prop
   const handlePanelDelete = (id) => {
     onDelete(id);
-    setShowConfirmDelete(false);
   };
 
   return (
@@ -142,7 +132,6 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
       }}
       onMouseLeave={() => {
         setShowDeleteButton(false);
-        setShowConfirmDelete(false);
       }}
     >
       <div className="main-panel smooth-transition relative mx-auto w-full h-full">
@@ -157,31 +146,6 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
           >
             ✕
           </button>
-        )}
-
-        {/* Delete confirmation modal */}
-        {showConfirmDelete && (
-          <div className="delete-confirm-modal">
-            <p>Delete this panel?</p>
-            <div className="delete-confirm-buttons">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePanelDelete(panel.id);
-                }}
-              >
-                Yes
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowConfirmDelete(false);
-                }}
-              >
-                No
-              </button>
-            </div>
-          </div>
         )}
 
         <EarningsPanel

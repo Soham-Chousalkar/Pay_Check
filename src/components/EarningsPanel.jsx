@@ -268,7 +268,7 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
           }}
           onBlur={() => setIsEditingTitle(false)}
           onClick={() => !isEditingTitle && setIsEditingTitle(true)}
-          className={`text-gray-800 font-bold text-xl tracking-wide px-6 transition-colors ${isEditingTitle ? 'cursor-text outline-none' : 'cursor-pointer hover:text-gray-600'}`}
+          className={`text-gray-800 font-bold text-xl tracking-wide px-6 transition-colors ${isEditingTitle ? 'cursor-text outline-none' : 'cursor-text hover:text-gray-600'}`}
           style={{ outline: isEditingTitle ? 'none' : undefined }}
         >
           {title}
@@ -285,7 +285,7 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
               value={rateInput}
               onChange={(e) => setRateInput(e.target.value)}
               onKeyDown={handleRateSubmit}
-              className="w-full text-center text-lg text-gray-500 bg-transparent border-none outline-none placeholder-gray-500"
+              className="w-full text-center text-lg text-gray-500 bg-transparent border-none outline-none placeholder-gray-500 cursor-text"
             />
           </div>
         ) : (

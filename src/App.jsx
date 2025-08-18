@@ -148,6 +148,52 @@ export default function App() {
     return totalEarnings;
   }, [panels]);
 
+  // Function to recalculate group container dimensions
+  const recalculateGroupContainer = useCallback((groupId) => {
+    const group = groups[groupId];
+    if (!group) return;
+
+    const groupPanels = panels.filter(p => group.panelIds.includes(p.id));
+    if (groupPanels.length === 0) return;
+
+    // Calculate new container dimensions based on current panel count
+    const panelCount = groupPanels.length;
+    const panelsPerRow = Math.ceil(Math.sqrt(panelCount));
+    const rows = Math.ceil(panelCount / panelsPerRow);
+
+    const containerPadding = 60;
+    const panelSpacing = 30;
+    const scaledPanelWidth = PANEL_WIDTH;
+    const scaledPanelHeight = PANEL_HEIGHT;
+
+    const containerWidth = (panelsPerRow * scaledPanelWidth) + ((panelsPerRow - 1) * panelSpacing) + containerPadding;
+    const containerHeight = (rows * scaledPanelHeight) + ((rows - 1) * panelSpacing) + containerPadding + 100;
+
+    // Calculate center position from current panel positions
+    const minX = Math.min(...groupPanels.map(p => p.x));
+    const maxX = Math.max(...groupPanels.map(p => p.x + scaledPanelWidth));
+    const minY = Math.min(...groupPanels.map(p => p.y));
+    const maxY = Math.max(...groupPanels.map(p => p.y + scaledPanelHeight));
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    const containerLeft = centerX - (containerWidth / 2);
+    const containerTop = centerY - (containerHeight / 2);
+
+    // Update group with new container dimensions
+    setGroups(prev => ({
+      ...prev,
+      [groupId]: {
+        ...prev[groupId],
+        containerX: containerLeft,
+        containerY: containerTop,
+        containerWidth: containerWidth,
+        containerHeight: containerHeight
+      }
+    }));
+  }, [groups, panels]);
+
   // Function to update group earnings when panel states change
   const updateGroupEarnings = useCallback((panelId) => {
     // Find which group this panel belongs to
@@ -260,8 +306,40 @@ export default function App() {
       height: PANEL_HEIGHT
     };
 
+    // First, check if the dragged panel should be added to an existing group
+    for (const [groupId, group] of Object.entries(groups)) {
+      const groupPanels = panels.filter(p => group.panelIds.includes(p.id));
+      
+      // Check if dragged panel overlaps with any panel in this group
+      for (const groupPanel of groupPanels) {
+        const shouldGroup = shouldGroupPanels(draggedPanelWithDimensions, groupPanel);
+        if (shouldGroup) {
+          // Add panel to existing group
+          const allPanelIds = [...group.panelIds, draggedPanelId];
+          const totalEarnings = calculateGroupEarnings(allPanelIds);
+          
+          return {
+            type: 'addToExisting',
+            groupId: groupId,
+            draggedPanelId,
+            allPanelIds,
+            totalEarnings,
+            centerX: (draggedPanelPos.x + groupPanel.x) / 2,
+            centerY: (draggedPanelPos.y + groupPanel.y) / 2
+          };
+        }
+      }
+    }
+
+    // If not adding to existing group, check for creating new group with overlapping panels
     const overlappingPanels = panels.filter(panel => {
       if (panel.id === draggedPanelId) return false;
+      
+      // Don't include panels that already belong to groups
+      const isInGroup = Object.values(groups).some(group => 
+        group.panelIds.includes(panel.id)
+      );
+      if (isInGroup) return false;
 
       const shouldGroup = shouldGroupPanels(draggedPanelWithDimensions, panel);
 
@@ -274,6 +352,7 @@ export default function App() {
       const totalEarnings = calculateGroupEarnings(allPanelIds);
 
       return {
+        type: 'createNew',
         draggedPanelId,
         overlappingPanelIds: overlappingPanels.map(p => p.id),
         allPanelIds,
@@ -284,26 +363,12 @@ export default function App() {
     }
 
     return null;
-  }, [panels, calculateGroupEarnings]);
+  }, [panels, groups, calculateGroupEarnings]);
 
-  // Function to create a group when panels are dropped
-  const createGroup = useCallback((groupingData) => {
-    const groupId = `group-${Date.now()}`;
-    const newGroup = {
-      id: groupId,
-      panelIds: groupingData.allPanelIds,
-      totalEarnings: groupingData.totalEarnings,
-      title: `$${groupingData.totalEarnings.toFixed(2)} - Project Group`,
-      createdAt: Date.now()
-    };
-
-    // First, create the group to get its ID
-    setGroups(prev => ({ ...prev, [groupId]: newGroup }));
-    setGroupVisibility(prev => ({ ...prev, [groupId]: true }));
-
-    // Then rearrange panels in the group so they're all visible
+  // Function to rearrange panels within a group
+  const rearrangeGroupPanels = useCallback((group) => {
     setPanels(prev => {
-      const panelsToGroup = prev.filter(p => groupingData.allPanelIds.includes(p.id));
+      const panelsToGroup = prev.filter(p => group.panelIds.includes(p.id));
       if (panelsToGroup.length === 0) return prev;
 
       // Calculate group center position from original panel positions
@@ -328,15 +393,9 @@ export default function App() {
       const startX = centerX - (gridWidth / 2);
       const startY = centerY - (gridHeight / 2) + 40; // Offset for header
 
-      // Store the group position in the group object for container positioning
-      newGroup.containerX = startX - 30; // Container extends 30px beyond panels
-      newGroup.containerY = startY - 60; // Container extends 60px above panels for header
-      newGroup.containerWidth = gridWidth + 60; // Container width with padding
-      newGroup.containerHeight = gridHeight + 100; // Container height with padding and header
-
       return prev.map(panel => {
-        if (groupingData.allPanelIds.includes(panel.id)) {
-          const panelIndex = groupingData.allPanelIds.indexOf(panel.id);
+        if (group.panelIds.includes(panel.id)) {
+          const panelIndex = group.panelIds.indexOf(panel.id);
           const row = Math.floor(panelIndex / panelsPerRow);
           const col = panelIndex % panelsPerRow;
 
@@ -349,32 +408,50 @@ export default function App() {
         return panel;
       });
     });
+  }, []);
 
-    // Immediately update group earnings to ensure they're displayed
-    setTimeout(() => {
-      groupingData.allPanelIds.forEach(panelId => {
-        updateGroupEarnings(panelId);
-      });
-    }, 100);
+  // Function to create a group when panels are dropped
+  const createGroup = useCallback((groupingData) => {
+    if (groupingData.type === 'addToExisting') {
+      // Add panel to existing group
+      const existingGroup = groups[groupingData.groupId];
+      if (!existingGroup) return null;
 
-    logDebug('GROUP_CREATED', `Group ${groupId} created with ${groupingData.allPanelIds.length} panels, total: $${groupingData.totalEarnings.toFixed(2)}`);
+      const updatedGroup = {
+        ...existingGroup,
+        panelIds: [...existingGroup.panelIds, groupingData.draggedPanelId],
+        totalEarnings: groupingData.totalEarnings,
+        title: `$${groupingData.totalEarnings.toFixed(2)} - ${(existingGroup.title || 'Project Group').replace(/^\$[\d.]+ - /, '')}`
+      };
 
-    return groupId;
+      setGroups(prev => ({ ...prev, [groupingData.groupId]: updatedGroup }));
 
-    setGroups(prev => ({ ...prev, [groupId]: newGroup }));
-    setGroupVisibility(prev => ({ ...prev, [groupId]: true })); // Show by default
+      // Rearrange panels in the updated group
+      rearrangeGroupPanels(updatedGroup);
+      
+      logDebug('PANEL_ADDED_TO_GROUP', `Panel ${groupingData.draggedPanelId} added to group ${groupingData.groupId}`);
+      return groupingData.groupId;
+    } else {
+      // Create new group
+      const groupId = `group-${Date.now()}`;
+      const newGroup = {
+        id: groupId,
+        panelIds: groupingData.allPanelIds,
+        totalEarnings: groupingData.totalEarnings,
+        title: `$${groupingData.totalEarnings.toFixed(2)} - Project Group`,
+        createdAt: Date.now()
+      };
 
-    // Immediately update group earnings to ensure they're displayed
-    setTimeout(() => {
-      groupingData.allPanelIds.forEach(panelId => {
-        updateGroupEarnings(panelId);
-      });
-    }, 100);
+      setGroups(prev => ({ ...prev, [groupId]: newGroup }));
+      setGroupVisibility(prev => ({ ...prev, [groupId]: true }));
 
-    logDebug('GROUP_CREATED', `Group ${groupId} created with ${groupingData.allPanelIds.length} panels, total: $${groupingData.totalEarnings.toFixed(2)}`);
+      // Rearrange panels in the new group
+      rearrangeGroupPanels(newGroup);
 
-    return groupId;
-  }, [logDebug]);
+      logDebug('GROUP_CREATED', `Group ${groupId} created with ${groupingData.allPanelIds.length} panels, total: $${groupingData.totalEarnings.toFixed(2)}`);
+      return groupId;
+    }
+  }, [groups, rearrangeGroupPanels, logDebug]);
 
   // Function to toggle group visibility
   const toggleGroupVisibility = useCallback((groupId) => {
@@ -651,12 +728,14 @@ export default function App() {
                         const existingGroup = prev[currentGroup.id];
                         if (!existingGroup) return prev; // Safety check
 
+                        const updatedGroup = {
+                          ...existingGroup,
+                          panelIds: existingGroup.panelIds.filter(id => id !== panelId)
+                        };
+
                         return {
                           ...prev,
-                          [currentGroup.id]: {
-                            ...existingGroup,
-                            panelIds: existingGroup.panelIds.filter(id => id !== panelId)
-                          }
+                          [currentGroup.id]: updatedGroup
                         };
                       });
 
@@ -674,6 +753,8 @@ export default function App() {
                         });
                         logDebug('GROUP_REMOVED', `Group ${currentGroup.id} removed - insufficient panels`);
                       } else {
+                        // Recalculate container dimensions for the updated group
+                        setTimeout(() => recalculateGroupContainer(currentGroup.id), 50);
                         logDebug('PANEL_REMOVED_FROM_GROUP', `Panel ${panelId} removed from group ${currentGroup.id}`);
                       }
                     }
@@ -852,40 +933,30 @@ export default function App() {
           const groupPanels = panels.filter(p => (group.panelIds || []).includes(p.id));
           if (groupPanels.length === 0) return null;
 
-          // Use stored container dimensions if available, otherwise calculate them
-          let containerLeft, containerTop, containerWidth, containerHeight;
+          // Calculate container dimensions based on current panel count
+          const panelCount = groupPanels.length;
+          const panelsPerRow = Math.ceil(Math.sqrt(panelCount));
+          const rows = Math.ceil(panelCount / panelsPerRow);
 
-          if (group.containerX !== undefined && group.containerY !== undefined) {
-            // Use stored container position and dimensions
-            containerLeft = group.containerX;
-            containerTop = group.containerY;
-            containerWidth = group.containerWidth;
-            containerHeight = group.containerHeight;
-          } else {
-            // Fallback calculation (for existing groups)
-            const panelCount = groupPanels.length;
-            const panelsPerRow = Math.ceil(Math.sqrt(panelCount));
-            const rows = Math.ceil(panelCount / panelsPerRow);
+          const containerPadding = 60;
+          const panelSpacing = 30;
+          const scaledPanelWidth = PANEL_WIDTH;
+          const scaledPanelHeight = PANEL_HEIGHT;
 
-            const containerPadding = 60;
-            const panelSpacing = 30;
-            const scaledPanelWidth = PANEL_WIDTH;
-            const scaledPanelHeight = PANEL_HEIGHT;
+          const containerWidth = (panelsPerRow * scaledPanelWidth) + ((panelsPerRow - 1) * panelSpacing) + containerPadding;
+          const containerHeight = (rows * scaledPanelHeight) + ((rows - 1) * panelSpacing) + containerPadding + 100;
 
-            containerWidth = (panelsPerRow * scaledPanelWidth) + ((panelsPerRow - 1) * panelSpacing) + containerPadding;
-            containerHeight = (rows * scaledPanelHeight) + ((rows - 1) * panelSpacing) + containerPadding + 100;
+          // Calculate center position from current panel positions
+          const minX = Math.min(...groupPanels.map(p => p.x));
+          const maxX = Math.max(...groupPanels.map(p => p.x + scaledPanelWidth));
+          const minY = Math.min(...groupPanels.map(p => p.y));
+          const maxY = Math.max(...groupPanels.map(p => p.y + scaledPanelHeight));
 
-            const minX = Math.min(...groupPanels.map(p => p.x));
-            const maxX = Math.max(...groupPanels.map(p => p.x + scaledPanelWidth));
-            const minY = Math.min(...groupPanels.map(p => p.y));
-            const maxY = Math.max(...groupPanels.map(p => p.y + scaledPanelHeight));
+          const centerX = (minX + maxX) / 2;
+          const centerY = (minY + maxY) / 2;
 
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-
-            containerLeft = centerX - (containerWidth / 2);
-            containerTop = centerY - (containerHeight / 2);
-          }
+          const containerLeft = centerX - (containerWidth / 2);
+          const containerTop = centerY - (containerHeight / 2);
 
           // Handle group dragging
           const handleGroupDragStart = (e) => {

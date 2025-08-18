@@ -18,6 +18,7 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [useRetroStyle, setUseRetroStyle] = useState(useRetroStyleGlobal);
   const [isEditingTimes, setIsEditingTimes] = useState(false);
+  const [isEditingRate, setIsEditingRate] = useState(false);
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
 
@@ -179,13 +180,29 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
           startTime,
           endTime,
           title,
+          earnings, // Include the current earnings value
         });
       }
     };
 
     const timeoutId = setTimeout(updateState, 0);
     return () => clearTimeout(timeoutId);
-  }, [hourlyRate, accumulatedSeconds, isRunning, startTime, endTime, onStateChange, title]);
+  }, [hourlyRate, accumulatedSeconds, isRunning, startTime, endTime, onStateChange, title, earnings]);
+
+  // Update state when earnings change (for real-time updates)
+  useEffect(() => {
+    if (onStateChange) {
+      onStateChange({
+        isRunning,
+        hourlyRate,
+        accumulatedSeconds,
+        startTime,
+        endTime,
+        title,
+        earnings,
+      });
+    }
+  }, [earnings, onStateChange, isRunning, hourlyRate, accumulatedSeconds, startTime, endTime, title]);
 
   // Event handlers
   const handleRateSubmit = (e) => {
@@ -199,6 +216,17 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
       setEndTime(null);
       startTimeRef.current = null;
       startTimer(parsed);
+    }
+  };
+
+  const handleRateEdit = (e) => {
+    if (e.key === "Enter") {
+      const parsed = parseFloat(e.target.value);
+      if (!isFinite(parsed) || parsed <= 0) return;
+      setHourlyRate(parsed);
+      setIsEditingRate(false);
+    } else if (e.key === "Escape") {
+      setIsEditingRate(false);
     }
   };
 
@@ -315,16 +343,32 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
 
         {hourlyRate && (
           <div className="text-center mb-4 px-5">
-            <div className="text-xs text-gray-700">
-              {useRetroStyle ? (
-                <>
-                  <RetroDigitalNumber value={hourlyRate} className="text-xs" showDollarSign={true} />
-                  <RetroDigitalText text="/hr" className="text-xs ml-1" />
-                </>
-              ) : (
-                <span className="text-xs text-gray-700">${hourlyRate}/hr</span>
-              )}
-            </div>
+            {isEditingRate ? (
+              <input
+                type="number"
+                step="0.01"
+                defaultValue={hourlyRate}
+                onKeyDown={handleRateEdit}
+                onBlur={() => setIsEditingRate(false)}
+                className="w-full text-center text-xs text-gray-700 bg-transparent border-none outline-none cursor-text"
+                autoFocus
+              />
+            ) : (
+              <div 
+                className="text-xs text-gray-700 cursor-pointer hover:text-gray-900 transition-colors"
+                onClick={() => setIsEditingRate(true)}
+                title="Click to edit hourly rate"
+              >
+                {useRetroStyle ? (
+                  <>
+                    <RetroDigitalNumber value={hourlyRate} className="text-xs" showDollarSign={true} />
+                    <RetroDigitalText text="/hr" className="text-xs ml-1" />
+                  </>
+                ) : (
+                  <span>${hourlyRate}/hr</span>
+                )}
+              </div>
+            )}
           </div>
         )}
 

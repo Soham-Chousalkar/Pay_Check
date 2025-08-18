@@ -21,8 +21,7 @@ export function usePanelEdgeDetection(panels, scale, isDraggingAny, worldRef, fi
   
   // Remove debug logging for performance improvement
   // useEffect(() => {
-  //   console.log('Panels:', panels);
-  //   console.log('Current plusState:', plusState);
+
   // }, [panels, plusState]);
 
   // Track the last locked edge to prevent rapid toggling
@@ -44,7 +43,7 @@ export function usePanelEdgeDetection(panels, scale, isDraggingAny, worldRef, fi
     
     // Ensure we have at least one panel for button detection
     if (panels.length === 0) {
-      // console.log('No panels found for edge detection');
+    
       return;
     }
     
@@ -60,7 +59,7 @@ export function usePanelEdgeDetection(panels, scale, isDraggingAny, worldRef, fi
       
       lastMousePositionRef.current = currentMousePos;
       
-      // console.log('Mouse position:', currentMousePos);
+    
       
       // Check if we're interacting with an interactive element
       const isOverPlus = e.target && (e.target.closest && e.target.closest('button.global-plus'));
@@ -130,7 +129,7 @@ export function usePanelEdgeDetection(panels, scale, isDraggingAny, worldRef, fi
         currentRadius = Math.max(EDGE_TRIGGER_RADIUS * 1.2, currentRadius * 0.7);
       }
       
-      // console.log('Current edge detection radius:', currentRadius);
+    
       
       let best = null; // {panelId, side, dist}
       let bestDist = Infinity;

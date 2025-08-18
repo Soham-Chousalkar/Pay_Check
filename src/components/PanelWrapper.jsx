@@ -1,11 +1,11 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback, memo } from "react";
 import EarningsPanel from "./EarningsPanel";
 import { PANEL_WIDTH, PANEL_HEIGHT } from "../utils/panelUtils";
 
 /**
  * PanelWrapper - Wraps panels with dragging functionality
  */
-function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlobal, onStateChange, onDelete, scale }) {
+function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlobal, onStateChange, onDelete, scale, panelOpacity = 60, isInGroup = false }) {
   const wrapperRef = useRef(null);
   // Use refs instead of state for dragging to avoid re-render loops
   const dragRef = useRef({
@@ -106,6 +106,10 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
     onDelete(id);
   };
 
+  // Calculate panel dimensions - keep full size for better usability
+  const panelWidth = PANEL_WIDTH;
+  const panelHeight = PANEL_HEIGHT;
+
   return (
     <div
       ref={wrapperRef}
@@ -113,8 +117,9 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
       style={{
         left: `${panel.x}px`,
         top: `${panel.y}px`,
-        width: `${PANEL_WIDTH}px`,
-        height: `${PANEL_HEIGHT}px`
+        width: `${panelWidth}px`,
+        height: `${panelHeight}px`,
+        zIndex: isInGroup ? 20 : 25
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={(e) => {
@@ -150,11 +155,12 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
 
         <EarningsPanel
           useRetroStyleGlobal={useRetroStyleGlobal}
-          onStateChange={(state) => onStateChange(panel.id, state)}
+          onStateChange={useCallback((state) => onStateChange(panel.id, state), [onStateChange, panel.id])}
+          panelOpacity={panelOpacity}
         />
       </div>
     </div>
   );
 }
 
-export default PanelWrapper;
+export default memo(PanelWrapper);

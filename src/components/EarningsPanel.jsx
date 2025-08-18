@@ -1,11 +1,11 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, memo } from "react";
 import { RetroDigitalNumber, RetroDigitalText } from "./RetroDigital";
 import { formatTimeOnly, formatDateOnly, formatDateTime, parseUserDateTime } from "../utils/dateUtils";
 
 /**
  * EarningsPanel - The main component for tracking and displaying earnings
  */
-function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal = true, onStateChange }) {
+function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal = true, onStateChange, panelOpacity = 60 }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(null);
   const [rateInput, setRateInput] = useState("");
@@ -18,12 +18,15 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [useRetroStyle, setUseRetroStyle] = useState(useRetroStyleGlobal);
   const [isEditingTimes, setIsEditingTimes] = useState(false);
+  const [isEditingRate, setIsEditingRate] = useState(false);
   const [startInput, setStartInput] = useState("");
   const [endInput, setEndInput] = useState("");
 
   const titleInputRef = useRef(null);
   const startTimeRef = useRef(null);
   const timerRef = useRef(null);
+  const onStateChangeRef = useRef(onStateChange);
+  useEffect(() => { onStateChangeRef.current = onStateChange; }, [onStateChange]);
 
   const dollarsPerSecond = hourlyRate ? hourlyRate / 3600 : 0;
 
@@ -171,21 +174,37 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
 
     // Debounce the state change updates to prevent maximum update depth exceeded
     const updateState = () => {
-      if (onStateChange) {
-        onStateChange({
+      if (onStateChangeRef.current) {
+        onStateChangeRef.current({
           isRunning,
           hourlyRate,
           accumulatedSeconds,
           startTime,
           endTime,
           title,
+          earnings, // Include the current earnings value
         });
       }
     };
 
     const timeoutId = setTimeout(updateState, 0);
     return () => clearTimeout(timeoutId);
-  }, [hourlyRate, accumulatedSeconds, isRunning, startTime, endTime, onStateChange, title]);
+  }, [hourlyRate, accumulatedSeconds, isRunning, startTime, endTime, title, earnings]);
+
+  // Update state when earnings change (for real-time updates)
+  useEffect(() => {
+    if (onStateChangeRef.current) {
+      onStateChangeRef.current({
+        isRunning,
+        hourlyRate,
+        accumulatedSeconds,
+        startTime,
+        endTime,
+        title,
+        earnings,
+      });
+    }
+  }, [earnings, isRunning, hourlyRate, accumulatedSeconds, startTime, endTime, title]);
 
   // Event handlers
   const handleRateSubmit = (e) => {
@@ -199,6 +218,17 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
       setEndTime(null);
       startTimeRef.current = null;
       startTimer(parsed);
+    }
+  };
+
+  const handleRateEdit = (e) => {
+    if (e.key === "Enter") {
+      const parsed = parseFloat(e.target.value);
+      if (!isFinite(parsed) || parsed <= 0) return;
+      setHourlyRate(parsed);
+      setIsEditingRate(false);
+    } else if (e.key === "Escape") {
+      setIsEditingRate(false);
     }
   };
 
@@ -255,7 +285,12 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   const timeDisplay = getTimeDisplay();
 
   return (
-    <div className="p-5 h-full flex flex-col justify-between">
+    <div className="p-5 h-full flex flex-col justify-between" style={{
+      backgroundColor: `rgba(255, 255, 255, ${panelOpacity / 100})`,
+      borderRadius: '20px',
+      border: `2px solid rgba(100, 100, 100, ${panelOpacity / 100 * 0.3})`,
+      boxShadow: `20px 20px 60px rgba(0, 0, 0, ${panelOpacity / 100 * 0.08}), -20px -20px 60px rgba(255, 255, 255, ${panelOpacity / 100 * 0.1})`
+    }}>
       <div className="text-center mb-4">
         <h1
           ref={titleInputRef}
@@ -310,16 +345,32 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
 
         {hourlyRate && (
           <div className="text-center mb-4 px-5">
-            <div className="text-xs text-gray-700">
-              {useRetroStyle ? (
-                <>
-                  <RetroDigitalNumber value={hourlyRate} className="text-xs" showDollarSign={true} />
-                  <RetroDigitalText text="/hr" className="text-xs ml-1" />
-                </>
-              ) : (
-                <span className="text-xs text-gray-700">${hourlyRate}/hr</span>
-              )}
-            </div>
+            {isEditingRate ? (
+              <input
+                type="number"
+                step="0.01"
+                defaultValue={hourlyRate}
+                onKeyDown={handleRateEdit}
+                onBlur={() => setIsEditingRate(false)}
+                className="w-full text-center text-xs text-gray-700 bg-transparent border-none outline-none cursor-text"
+                autoFocus
+              />
+            ) : (
+              <div
+                className="text-xs text-gray-700 cursor-pointer hover:text-gray-900 transition-colors"
+                onClick={() => setIsEditingRate(true)}
+                title="Click to edit hourly rate"
+              >
+                {useRetroStyle ? (
+                  <>
+                    <RetroDigitalNumber value={hourlyRate} className="text-xs" showDollarSign={true} />
+                    <RetroDigitalText text="/hr" className="text-xs ml-1" />
+                  </>
+                ) : (
+                  <span>${hourlyRate}/hr</span>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -373,4 +424,4 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   );
 }
 
-export default EarningsPanel;
+export default memo(EarningsPanel);

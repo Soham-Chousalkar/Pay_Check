@@ -2,8 +2,8 @@
 export const PANEL_WIDTH = 300;
 export const PANEL_HEIGHT = 200;
 export const PANEL_GAP = 16;
-export const ZOOM_MIN = 0.5;
-export const ZOOM_MAX = 2;
+export const ZOOM_MIN = 0.01; // Allow zooming out to 1% (infinite zoom out)
+export const ZOOM_MAX = 10; // Allow zooming in to 1000% (single panel fits screen)
 export const ZOOM_STEP = 0.1;
 export const EDGE_TRIGGER_RADIUS = 30;
 export const EDGE_HYSTERESIS = 10; 
@@ -27,6 +27,34 @@ export function rectsOverlap(a, b) {
     a.y + PANEL_HEIGHT <= b.y || 
     b.y + PANEL_HEIGHT <= a.y
   );
+}
+
+/**
+ * Calculate overlap percentage between two panels (industry standard)
+ * @param {Object} a - First panel {x, y}
+ * @param {Object} b - Second panel {x, y}
+ * @returns {number} - Overlap percentage (0-100)
+ */
+export function calculateOverlapPercentage(a, b) {
+  const overlapX = Math.max(0, Math.min(a.x + PANEL_WIDTH, b.x + PANEL_WIDTH) - Math.max(a.x, b.x));
+  const overlapY = Math.max(0, Math.min(a.y + PANEL_HEIGHT, b.y + PANEL_HEIGHT) - Math.max(a.y, b.y));
+  
+  const overlapArea = overlapX * overlapY;
+  const panelArea = PANEL_WIDTH * PANEL_HEIGHT;
+  
+  // Return overlap percentage (0-100)
+  return (overlapArea / panelArea) * 100;
+}
+
+/**
+ * Check if panels should be grouped based on overlap threshold
+ * @param {Object} a - First panel {x, y}
+ * @param {Object} b - Second panel {x, y}
+ * @returns {boolean} - True if panels should be grouped
+ */
+export function shouldGroupPanels(a, b) {
+  const overlapPercentage = calculateOverlapPercentage(a, b);
+  return overlapPercentage >= 25; // Reduced threshold for better grouping
 }
 
 /**

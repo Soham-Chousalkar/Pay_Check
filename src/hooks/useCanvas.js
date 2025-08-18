@@ -59,8 +59,7 @@ export function useCanvas(addToHistory = null) {
   const openCanvas = (canvasId) => {
     if (canvasId === activeCanvasId) return;
     
-    // Log debug info
-    console.log(`DEBUG: Switching from canvas ${activeCanvasId} to ${canvasId}`);
+
     
     // snapshot current
     snapshotActiveCanvas();
@@ -92,8 +91,7 @@ export function useCanvas(addToHistory = null) {
   };
 
   const createNewCanvas = () => {
-    // Log debug info
-    console.log(`DEBUG: Creating new canvas`);
+
     
     snapshotActiveCanvas();
     const x = Math.max(0, (window.innerWidth - PANEL_WIDTH) / 2);
@@ -113,9 +111,6 @@ export function useCanvas(addToHistory = null) {
   };
 
   const deleteCanvas = (canvasId) => {
-    // Log debug info before deletion
-    console.log(`DEBUG: Deleting canvas ${canvasId}`);
-    
     // Get the canvas being deleted and current state for history
     const canvasToDelete = canvases.find(c => c.id === canvasId);
     const wasActiveCanvas = canvasId === activeCanvasId;

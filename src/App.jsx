@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import PanelWrapper from "./components/PanelWrapper";
 import DebugWindow from "./components/DebugWindow";
-import { PANEL_WIDTH, PANEL_HEIGHT, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from "./utils/panelUtils";
+import { useHistory } from "./hooks/useHistory";
 import { useCanvas } from "./hooks/useCanvas";
 import { usePanelManagement } from "./hooks/usePanelManagement";
 import { usePanelEdgeDetection } from "./hooks/usePanelEdgeDetection";
-import { useHistory } from "./hooks/useHistory";
+import { PANEL_WIDTH, PANEL_HEIGHT, shouldGroupPanels } from "./utils/panelUtils";
+
+// Zoom constants
+const ZOOM_MIN = 0.01; // Allow zooming out to 1% (infinite zoom out)
+const ZOOM_MAX = 10; // Allow zooming in to 1000% (single panel fits screen)
 
 /**
  * Main App component - PayTracker
@@ -13,9 +17,15 @@ import { useHistory } from "./hooks/useHistory";
 export default function App() {
   // Global state
   const [scale, setScale] = useState(1);
-  const [useRetroStyle, setUseRetroStyle] = useState(true);
+  const [useRetroStyle, setUseRetroStyle] = useState(false); // Always basic font by default
   const [showDebug, setShowDebug] = useState(false);
   const [debugLogs, setDebugLogs] = useState([]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [panelOpacity, setPanelOpacity] = useState(60); // Default 60%
+  const [groupingPreview, setGroupingPreview] = useState(null);
+  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [groups, setGroups] = useState({});
+  const [groupVisibility, setGroupVisibility] = useState({});
 
   // Refs
   const stageRef = useRef(null);
@@ -115,14 +125,66 @@ export default function App() {
     handleDrag,
     handleDragStart,
     handleDragEnd,
-    handleAddPanel,
-    handlePanelStateChange
+    handleAddPanel
   } = usePanelManagement(panels, setPanels, addToHistory);
 
   const {
     plusState,
     plusButtonInteractionRef
   } = usePanelEdgeDetection(panels, scale, isDraggingAny, worldRef, findNeighborOnSide);
+
+  // Function to calculate total earnings for grouped panels
+  const calculateGroupEarnings = useCallback((panelIds) => {
+    let totalEarnings = 0;
+    panelIds.forEach(panelId => {
+      const panel = panels.find(p => p.id === panelId);
+      if (panel && panel.state && panel.state.earnings) {
+        totalEarnings += panel.state.earnings;
+      } else if (panel) {
+        // If panel exists but no earnings yet, add 0 (this ensures the group shows $0.00 initially)
+        totalEarnings += 0;
+      }
+    });
+    return totalEarnings;
+  }, [panels]);
+
+  // Function to update group earnings when panel states change
+  const updateGroupEarnings = useCallback((panelId) => {
+    // Find which group this panel belongs to
+    const groupEntry = Object.entries(groups).find(([_, group]) =>
+      group.panelIds.includes(panelId)
+    );
+
+    if (groupEntry) {
+      const [groupId, group] = groupEntry;
+      const newTotalEarnings = calculateGroupEarnings(group.panelIds);
+
+      setGroups(prev => {
+        const existingGroup = prev[groupId];
+        if (!existingGroup) return prev; // Safety check
+
+        return {
+          ...prev,
+          [groupId]: {
+            ...existingGroup,
+            totalEarnings: newTotalEarnings,
+            title: `$${newTotalEarnings.toFixed(2)} - ${(existingGroup.title || 'Project Group').replace(/^\$[\d.]+ - /, '')}`
+          }
+        };
+      });
+    }
+  }, [groups, calculateGroupEarnings]);
+
+  // Panel state change handler
+  const handlePanelStateChange = useCallback((panelId, state) => {
+    // Update the panel state
+    setPanels(prev => prev.map(p => p.id === panelId ? { ...p, state } : p));
+
+    // Update group earnings if this panel belongs to a group
+    updateGroupEarnings(panelId);
+
+    logDebug('PANEL_STATE_CHANGE', `Panel ${panelId} state updated`);
+  }, [updateGroupEarnings]);
 
   // Wheel event handler for zooming
   const handleWheel = useCallback((e) => {
@@ -185,13 +247,203 @@ export default function App() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
+  // Function to detect overlapping panels for grouping
+  const detectGroupingOpportunity = useCallback((draggedPanelId, draggedPanelPos) => {
+    const draggedPanel = panels.find(p => p.id === draggedPanelId);
+    if (!draggedPanel) return null;
+
+    // Create a complete panel object with position and dimensions
+    const draggedPanelWithDimensions = {
+      x: draggedPanelPos.x,
+      y: draggedPanelPos.y,
+      width: PANEL_WIDTH,
+      height: PANEL_HEIGHT
+    };
+
+    const overlappingPanels = panels.filter(panel => {
+      if (panel.id === draggedPanelId) return false;
+
+      const shouldGroup = shouldGroupPanels(draggedPanelWithDimensions, panel);
+
+      // Use 25% overlap threshold for better grouping
+      return shouldGroup;
+    });
+
+    if (overlappingPanels.length > 0) {
+      const allPanelIds = [draggedPanelId, ...overlappingPanels.map(p => p.id)];
+      const totalEarnings = calculateGroupEarnings(allPanelIds);
+
+      return {
+        draggedPanelId,
+        overlappingPanelIds: overlappingPanels.map(p => p.id),
+        allPanelIds,
+        totalEarnings,
+        centerX: (draggedPanelPos.x + overlappingPanels[0].x) / 2,
+        centerY: (draggedPanelPos.y + overlappingPanels[0].y) / 2
+      };
+    }
+
+    return null;
+  }, [panels, calculateGroupEarnings]);
+
+  // Function to create a group when panels are dropped
+  const createGroup = useCallback((groupingData) => {
+    const groupId = `group-${Date.now()}`;
+    const newGroup = {
+      id: groupId,
+      panelIds: groupingData.allPanelIds,
+      totalEarnings: groupingData.totalEarnings,
+      title: `$${groupingData.totalEarnings.toFixed(2)} - Project Group`,
+      createdAt: Date.now()
+    };
+
+    // First, create the group to get its ID
+    setGroups(prev => ({ ...prev, [groupId]: newGroup }));
+    setGroupVisibility(prev => ({ ...prev, [groupId]: true }));
+
+    // Then rearrange panels in the group so they're all visible
+    setPanels(prev => {
+      const panelsToGroup = prev.filter(p => groupingData.allPanelIds.includes(p.id));
+      if (panelsToGroup.length === 0) return prev;
+
+      // Calculate group center position from original panel positions
+      const centerX = (Math.min(...panelsToGroup.map(p => p.x)) + Math.max(...panelsToGroup.map(p => p.x + PANEL_WIDTH))) / 2;
+      const centerY = (Math.min(...panelsToGroup.map(p => p.y)) + Math.max(...panelsToGroup.map(p => p.y + PANEL_HEIGHT))) / 2;
+
+      // Calculate grid layout - more organized grid
+      const panelCount = panelsToGroup.length;
+      const panelsPerRow = Math.ceil(Math.sqrt(panelCount));
+      const rows = Math.ceil(panelCount / panelsPerRow);
+
+      // Panel spacing and scaling - keep panels at full size for better usability
+      const spacing = 30;
+      const scaledPanelWidth = PANEL_WIDTH;
+      const scaledPanelHeight = PANEL_HEIGHT;
+
+      // Calculate total grid dimensions
+      const gridWidth = (panelsPerRow * scaledPanelWidth) + ((panelsPerRow - 1) * spacing);
+      const gridHeight = (rows * scaledPanelHeight) + ((rows - 1) * spacing);
+
+      // Calculate starting position to center the grid
+      const startX = centerX - (gridWidth / 2);
+      const startY = centerY - (gridHeight / 2) + 40; // Offset for header
+
+      // Store the group position in the group object for container positioning
+      newGroup.containerX = startX - 30; // Container extends 30px beyond panels
+      newGroup.containerY = startY - 60; // Container extends 60px above panels for header
+      newGroup.containerWidth = gridWidth + 60; // Container width with padding
+      newGroup.containerHeight = gridHeight + 100; // Container height with padding and header
+
+      return prev.map(panel => {
+        if (groupingData.allPanelIds.includes(panel.id)) {
+          const panelIndex = groupingData.allPanelIds.indexOf(panel.id);
+          const row = Math.floor(panelIndex / panelsPerRow);
+          const col = panelIndex % panelsPerRow;
+
+          return {
+            ...panel,
+            x: startX + (col * (scaledPanelWidth + spacing)),
+            y: startY + (row * (scaledPanelHeight + spacing))
+          };
+        }
+        return panel;
+      });
+    });
+
+    // Immediately update group earnings to ensure they're displayed
+    setTimeout(() => {
+      groupingData.allPanelIds.forEach(panelId => {
+        updateGroupEarnings(panelId);
+      });
+    }, 100);
+
+    logDebug('GROUP_CREATED', `Group ${groupId} created with ${groupingData.allPanelIds.length} panels, total: $${groupingData.totalEarnings.toFixed(2)}`);
+
+    return groupId;
+
+    setGroups(prev => ({ ...prev, [groupId]: newGroup }));
+    setGroupVisibility(prev => ({ ...prev, [groupId]: true })); // Show by default
+
+    // Immediately update group earnings to ensure they're displayed
+    setTimeout(() => {
+      groupingData.allPanelIds.forEach(panelId => {
+        updateGroupEarnings(panelId);
+      });
+    }, 100);
+
+    logDebug('GROUP_CREATED', `Group ${groupId} created with ${groupingData.allPanelIds.length} panels, total: $${groupingData.totalEarnings.toFixed(2)}`);
+
+    return groupId;
+  }, [logDebug]);
+
+  // Function to toggle group visibility
+  const toggleGroupVisibility = useCallback((groupId) => {
+    setGroupVisibility(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+    logDebug('GROUP_VISIBILITY_TOGGLED', `Group ${groupId} visibility: ${!groupVisibility[groupId] ? 'shown' : 'hidden'}`);
+  }, [groupVisibility, logDebug]);
+
+  // Function to update group title
+  const updateGroupTitle = useCallback((groupId, newTitle) => {
+    setGroups(prev => ({
+      ...prev,
+      [groupId]: {
+        ...prev[groupId],
+        title: newTitle
+      }
+    }));
+    logDebug('GROUP_TITLE_UPDATED', `Group ${groupId} title changed to: ${newTitle}`);
+  }, [logDebug]);
+
   return (
     <div
       ref={stageRef}
       className="min-h-screen paper-background overflow-hidden relative"
+      style={{
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundSize: backgroundImage ? 'cover' : undefined,
+        backgroundPosition: backgroundImage ? 'center' : undefined,
+        backgroundRepeat: backgroundImage ? 'no-repeat' : undefined
+      }}
     >
+      {/* Settings button (hamburger menu) */}
+      <div className="style-toggle-container" style={{
+        left: '20px',
+        top: '20px',
+        right: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        zIndex: 1001,
+        position: 'fixed'
+      }}>
+        <button
+          className="style-toggle-button"
+          onClick={() => {
+            const newShowSettings = !showSettings;
+            setShowSettings(newShowSettings);
+            logDebug('SETTINGS_TOGGLE', newShowSettings ? 'Settings window opened' : 'Settings window closed');
+          }}
+          title="Toggle Settings"
+        >
+          <span className="toggle-icon">☰</span>
+          <span className="toggle-text">Settings</span>
+        </button>
+      </div>
+
       {/* Combined Canvases button with + button */}
-      <div className="style-toggle-container" style={{ left: '20px', right: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div className="style-toggle-container" style={{
+        left: showSettings ? '250px' : '20px',
+        top: '80px',
+        right: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        transition: 'left 0.3s ease-in-out',
+        zIndex: 1001,
+        position: 'fixed'
+      }}>
         <button
           className="style-toggle-button"
           onClick={() => setShowCanvasLibrary(!showCanvasLibrary)}
@@ -290,7 +542,7 @@ export default function App() {
           className="style-toggle-button"
           title="Toggle Debug Window"
         >
-          <span className="toggle-icon">🐛</span>
+          <span className="toggle-icon">��</span>
           <span className="toggle-text">Debug</span>
         </button>
       </div>
@@ -333,43 +585,142 @@ export default function App() {
         ref={worldRef}
       >
         {/* Render all panels */}
-        {panels.map((p) => (
-          <PanelWrapper
-            key={p.id}
-            panel={p}
-            onDragStart={handleDragStart}
-            onDrag={handleDrag}
-            onDragEnd={(panelId) => {
-              // Get the final position for debug logging
-              const finalPanel = panels.find(p => p.id === panelId);
-              if (finalPanel) {
-                // The handleDragEnd in usePanelManagement will handle the detailed logging
-                handleDragEnd(panelId);
-              }
-            }}
-            useRetroStyleGlobal={useRetroStyle}
-            onStateChange={handlePanelStateChange}
-            onDelete={(panelId) => {
-              // Record history before deleting panel
-              const panelToDelete = panels.find(p => p.id === panelId);
-              const prevPanels = [...panels];
+        {panels.map((p) => {
+          // Check if panel belongs to a hidden group
+          const panelGroup = Object.values(groups).find(group =>
+            group.panelIds.includes(p.id)
+          );
+          const isInHiddenGroup = panelGroup && !groupVisibility[panelGroup.id];
 
-              addToHistory(
-                'DELETE_PANEL',
-                { panels: prevPanels },
-                { panels: prevPanels.filter(p => p.id !== panelId) },
-                (state) => setPanels(state.panels)
-              );
+          // Don't render panels that belong to hidden groups
+          if (isInHiddenGroup) return null;
 
-              // Delete the panel
-              setPanels(prev => prev.filter(p => p.id !== panelId));
+          return (
+            <PanelWrapper
+              key={p.id}
+              panel={p}
+              onDragStart={handleDragStart}
+              isInGroup={Object.values(groups).some(group => group.panelIds.includes(p.id))}
+              onDrag={(panelId, pos) => {
+                // Check for grouping opportunities
+                const grouping = detectGroupingOpportunity(panelId, pos);
+                if (grouping) {
+                  setGroupingPreview(grouping);
+                } else {
+                  setGroupingPreview(null);
+                }
 
-              // Log debug info
-              logDebug('DELETE_PANEL', `Panel ${panelId} deleted`);
-            }}
-            scale={scale}
-          />
-        ))}
+                // Check if panel is being dragged out of a group
+                const currentGroup = Object.values(groups).find(group =>
+                  group.panelIds.includes(panelId)
+                );
+
+                if (currentGroup) {
+                  // Use the group container bounds for better containment
+                  if (currentGroup.containerX !== undefined && currentGroup.containerY !== undefined) {
+                    const containerLeft = currentGroup.containerX;
+                    const containerTop = currentGroup.containerY;
+                    const containerRight = containerLeft + currentGroup.containerWidth;
+                    const containerBottom = containerTop + currentGroup.containerHeight;
+
+                    // Keep panel within group container bounds with some padding
+                    const padding = 20;
+                    const constrainedX = Math.max(containerLeft + padding, Math.min(containerRight - PANEL_WIDTH - padding, pos.x));
+                    const constrainedY = Math.max(containerTop + padding + 60, Math.min(containerBottom - PANEL_HEIGHT - padding, pos.y));
+
+                    // Update position to constrained values
+                    pos.x = constrainedX;
+                    pos.y = constrainedY;
+                  } else {
+                    // Fallback to center-based distance checking
+                    const groupPanels = panels.filter(p => currentGroup.panelIds.includes(p.id));
+                    const minX = Math.min(...groupPanels.map(p => p.x));
+                    const maxX = Math.max(...groupPanels.map(p => p.x + PANEL_WIDTH));
+                    const minY = Math.min(...groupPanels.map(p => p.y));
+                    const maxY = Math.max(...groupPanels.map(p => p.y + PANEL_HEIGHT));
+
+                    const groupCenterX = (minX + maxX) / 2;
+                    const groupCenterY = (minY + maxY) / 2;
+                    const distanceFromCenter = Math.sqrt(
+                      Math.pow(pos.x - groupCenterX, 2) + Math.pow(pos.y - groupCenterY, 2)
+                    );
+
+                    // If panel is dragged more than 150px from group center, remove it from group
+                    if (distanceFromCenter > 150) {
+                      setGroups(prev => {
+                        const existingGroup = prev[currentGroup.id];
+                        if (!existingGroup) return prev; // Safety check
+
+                        return {
+                          ...prev,
+                          [currentGroup.id]: {
+                            ...existingGroup,
+                            panelIds: existingGroup.panelIds.filter(id => id !== panelId)
+                          }
+                        };
+                      });
+
+                      // If group now has only 1 panel, remove the group entirely
+                      if (currentGroup.panelIds.length <= 2) {
+                        setGroups(prev => {
+                          const newGroups = { ...prev };
+                          delete newGroups[currentGroup.id];
+                          return newGroups;
+                        });
+                        setGroupVisibility(prev => {
+                          const newVisibility = { ...prev };
+                          delete newVisibility[currentGroup.id];
+                          return newVisibility;
+                        });
+                        logDebug('GROUP_REMOVED', `Group ${currentGroup.id} removed - insufficient panels`);
+                      } else {
+                        logDebug('PANEL_REMOVED_FROM_GROUP', `Panel ${panelId} removed from group ${currentGroup.id}`);
+                      }
+                    }
+                  }
+                }
+
+                // Call the original drag handler
+                handleDrag(panelId, pos);
+              }}
+              onDragEnd={(panelId) => {
+                // Get the final position for debug logging
+                const finalPanel = panels.find(p => p.id === panelId);
+                if (finalPanel) {
+                  handleDragEnd(panelId);
+                }
+
+                // Check if we should create a group
+                if (groupingPreview && groupingPreview.draggedPanelId === panelId) {
+                  createGroup(groupingPreview);
+                  setGroupingPreview(null);
+                }
+              }}
+              useRetroStyleGlobal={useRetroStyle}
+              onStateChange={handlePanelStateChange}
+              onDelete={(panelId) => {
+                // Record history before deleting panel
+                const panelToDelete = panels.find(p => p.id === panelId);
+                const prevPanels = [...panels];
+
+                addToHistory(
+                  'DELETE_PANEL',
+                  { panels: prevPanels },
+                  { panels: prevPanels.filter(p => p.id !== panelId) },
+                  (state) => setPanels(state.panels)
+                );
+
+                // Delete the panel
+                setPanels(prev => prev.filter(p => p.id !== panelId));
+
+                // Log debug info
+                logDebug('DELETE_PANEL', `Panel ${panelId} deleted`);
+              }}
+              scale={scale}
+              panelOpacity={panelOpacity}
+            />
+          );
+        })}
 
         {/* Preview panel when hovering over plus button */}
         {previewPanel && (
@@ -401,9 +752,6 @@ export default function App() {
               top: `${plusState.y}px`
             }}
             onClick={(e) => {
-              console.log(`DEBUG: Plus button clicked! plusState:`, plusState);
-              console.log(`DEBUG: Current panels:`, panels);
-
               e.stopPropagation();
               e.preventDefault();
 
@@ -417,12 +765,8 @@ export default function App() {
 
               // Only proceed if we have a valid panel ID
               if (panelId) {
-                // Log debug info before calling handleAddPanel
-                console.log(`DEBUG: Plus button clicked for panel ${panelId}, side: ${side}`);
-
                 // Use setTimeout to break potential update cycles
                 setTimeout(() => {
-                  console.log(`DEBUG: Calling handleAddPanel with panelId: ${panelId}, side: ${side}`);
                   const prevPanelCount = panels.length;
                   handleAddPanel(panelId, side, neighborId);
                   handlePlusMouseLeave();
@@ -438,7 +782,6 @@ export default function App() {
                   }, 100);
                 }, 0);
               } else {
-                console.log(`DEBUG: No valid panelId found. panels.length: ${panels.length}`);
                 logDebug('ADD_PANEL', `Failed to add panel - no valid panel ID found`);
               }
 
@@ -468,6 +811,267 @@ export default function App() {
             +
           </button>
         )}
+
+        {/* Grouping Preview Background Panel */}
+        {groupingPreview && (
+          <div className="grouping-preview-background" style={{
+            position: 'absolute',
+            left: `${Math.min(...groupingPreview.allPanelIds.map(id => {
+              const panel = panels.find(p => p.id === id);
+              return panel ? panel.x : 0;
+            })) - 20}px`,
+            top: `${Math.min(...groupingPreview.allPanelIds.map(id => {
+              const panel = panels.find(p => p.id === id);
+              return panel ? panel.y : 0;
+            })) - 20}px`,
+            width: `${Math.max(...groupingPreview.allPanelIds.map(id => {
+              const panel = panels.find(p => p.id === id);
+              return panel ? panel.x + PANEL_WIDTH : 0;
+            })) - Math.min(...groupingPreview.allPanelIds.map(id => {
+              const panel = panels.find(p => p.id === id);
+              return panel ? panel.x : 0;
+            })) + 40}px`,
+            height: `${Math.max(...groupingPreview.allPanelIds.map(id => {
+              const panel = panels.find(p => p.id === id);
+              return panel ? panel.y + PANEL_HEIGHT : 0;
+            })) - Math.min(...groupingPreview.allPanelIds.map(id => {
+              const panel = panels.find(p => p.id === id);
+              return panel ? panel.y : 0;
+            })) + 40}px`,
+            backgroundColor: 'rgba(100, 150, 255, 0.1)',
+            border: '2px dashed rgba(100, 150, 255, 0.3)',
+            borderRadius: '20px',
+            zIndex: 15,
+            pointerEvents: 'none'
+          }} />
+        )}
+
+        {/* Neumorphic Group Container - Large container wrapping grouped panels */}
+        {Object.entries(groups).map(([groupId, group]) => {
+          // Find the bounds of all panels in this group
+          const groupPanels = panels.filter(p => (group.panelIds || []).includes(p.id));
+          if (groupPanels.length === 0) return null;
+
+          // Use stored container dimensions if available, otherwise calculate them
+          let containerLeft, containerTop, containerWidth, containerHeight;
+
+          if (group.containerX !== undefined && group.containerY !== undefined) {
+            // Use stored container position and dimensions
+            containerLeft = group.containerX;
+            containerTop = group.containerY;
+            containerWidth = group.containerWidth;
+            containerHeight = group.containerHeight;
+          } else {
+            // Fallback calculation (for existing groups)
+            const panelCount = groupPanels.length;
+            const panelsPerRow = Math.ceil(Math.sqrt(panelCount));
+            const rows = Math.ceil(panelCount / panelsPerRow);
+
+            const containerPadding = 60;
+            const panelSpacing = 30;
+            const scaledPanelWidth = PANEL_WIDTH;
+            const scaledPanelHeight = PANEL_HEIGHT;
+
+            containerWidth = (panelsPerRow * scaledPanelWidth) + ((panelsPerRow - 1) * panelSpacing) + containerPadding;
+            containerHeight = (rows * scaledPanelHeight) + ((rows - 1) * panelSpacing) + containerPadding + 100;
+
+            const minX = Math.min(...groupPanels.map(p => p.x));
+            const maxX = Math.max(...groupPanels.map(p => p.x + scaledPanelWidth));
+            const minY = Math.min(...groupPanels.map(p => p.y));
+            const maxY = Math.max(...groupPanels.map(p => p.y + scaledPanelHeight));
+
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+
+            containerLeft = centerX - (containerWidth / 2);
+            containerTop = centerY - (containerHeight / 2);
+          }
+
+          // Handle group dragging
+          const handleGroupDragStart = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // Store initial positions of all panels in the group
+            const initialPositions = {};
+            groupPanels.forEach(panel => {
+              initialPositions[panel.id] = { x: panel.x, y: panel.y };
+            });
+            e.currentTarget.dataset.initialPositions = JSON.stringify(initialPositions);
+            e.currentTarget.dataset.startX = e.clientX;
+            e.currentTarget.dataset.startY = e.clientY;
+            e.currentTarget.dataset.isDragging = 'true';
+          };
+
+          const handleGroupDrag = (e) => {
+            if (e.currentTarget.dataset.isDragging !== 'true') return;
+
+            const initialPositions = JSON.parse(e.currentTarget.dataset.initialPositions || '{}');
+            const startX = parseInt(e.currentTarget.dataset.startX);
+            const startY = parseInt(e.currentTarget.dataset.startY);
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+
+            // Use the same simple logic as individual panel dragging
+            setPanels(prev => prev.map(panel => {
+              if (group.panelIds.includes(panel.id)) {
+                const initialPos = initialPositions[panel.id];
+                if (initialPos) {
+                  return {
+                    ...panel,
+                    x: initialPos.x + deltaX,
+                    y: initialPos.y + deltaY
+                  };
+                }
+              }
+              return panel;
+            }));
+
+            // Update group container position using the same delta approach
+            if (group.containerX !== undefined && group.containerY !== undefined) {
+              setGroups(prev => ({
+                ...prev,
+                [groupId]: {
+                  ...prev[groupId],
+                  containerX: group.containerX + deltaX,
+                  containerY: group.containerY + deltaY
+                }
+              }));
+            }
+          };
+
+          const handleGroupDragEnd = (e) => {
+            e.currentTarget.dataset.isDragging = 'false';
+            delete e.currentTarget.dataset.initialPositions;
+            delete e.currentTarget.dataset.startX;
+            delete e.currentTarget.dataset.startY;
+          };
+
+          return (
+            <div
+              key={groupId}
+              className="neumorphic-group-container"
+              style={{
+                position: 'absolute',
+                left: `${containerLeft}px`,
+                top: `${containerTop}px`,
+                width: `${containerWidth}px`,
+                height: `${containerHeight}px`,
+                backgroundColor: 'rgba(240, 240, 240, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '20px',
+                boxShadow: '8px 8px 16px rgba(0, 0, 0, 0.15), -8px -8px 16px rgba(255, 255, 255, 0.6)',
+                zIndex: 15,
+                pointerEvents: 'auto',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                cursor: 'move',
+                userSelect: 'none'
+              }}
+              onMouseDown={handleGroupDragStart}
+              onMouseMove={handleGroupDrag}
+              onMouseUp={handleGroupDragEnd}
+              onMouseLeave={handleGroupDragEnd}
+            >
+              {/* Group Header - Neumorphic style at top */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '15px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(10px)',
+                  borderRadius: '15px',
+                  padding: '12px 20px',
+                  boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.8)',
+                  zIndex: 26,
+                  pointerEvents: 'auto',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  minWidth: '140px',
+                  justifyContent: 'center',
+                  border: '1px solid rgba(255, 255, 255, 0.5)'
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onMouseMove={(e) => e.stopPropagation()}
+              >
+                <span style={{
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  color: '#059669',
+                  fontFamily: 'inherit'
+                }}>
+                  ${(group.totalEarnings || 0).toFixed(2)}
+                </span>
+                <span style={{ fontSize: '14px', color: '#666' }}>-</span>
+                <input
+                  type="text"
+                  value={(group.title || 'Project Group').replace(/^\$[\d.]+ - /, '')}
+                  onChange={(e) => updateGroupTitle(groupId, `$${(group.totalEarnings || 0).toFixed(2)} - ${e.target.value}`)}
+                  style={{
+                    fontSize: '16px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: '#374151',
+                    fontWeight: '600',
+                    outline: 'none',
+                    minWidth: '80px',
+                    textAlign: 'center',
+                    fontFamily: 'inherit'
+                  }}
+                  placeholder="Group Name"
+                />
+                {/* Delete Group Button */}
+                <button
+                  onClick={() => {
+                    // Show confirmation dialog
+                    if (window.confirm('Delete group or undo grouping?\n\nClick OK to delete group\nClick Cancel to undo grouping')) {
+                      // Delete group
+                      setGroups(prev => {
+                        const newGroups = { ...prev };
+                        delete newGroups[groupId];
+                        return newGroups;
+                      });
+                      setGroupVisibility(prev => {
+                        const newVisibility = { ...prev };
+                        delete newVisibility[groupId];
+                        return newVisibility;
+                      });
+                      logDebug('GROUP_DELETED', `Group ${groupId} deleted`);
+                    } else {
+                      // Undo grouping - restore individual panels
+                      setGroups(prev => {
+                        const newGroups = { ...prev };
+                        delete newGroups[groupId];
+                        return newGroups;
+                      });
+                      setGroupVisibility(prev => {
+                        const newVisibility = { ...prev };
+                        delete newVisibility[groupId];
+                        return newVisibility;
+                      });
+                      logDebug('GROUP_UNDONE', `Group ${groupId} undone, panels restored`);
+                    }
+                  }}
+                  style={{
+                    background: 'rgba(255, 100, 100, 0.1)',
+                    border: '1px solid rgba(255, 100, 100, 0.3)',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    color: '#d32f2f',
+                    marginLeft: '8px',
+                    boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.1), -2px -2px 4px rgba(255, 255, 255, 0.8)'
+                  }}
+                  title="Delete group or undo grouping"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Canvas library overlay */}
@@ -475,7 +1079,7 @@ export default function App() {
         <div className="canvas-library" style={{
           position: 'fixed',
           top: '120px',
-          left: '20px',
+          left: showSettings ? '250px' : '20px',
           width: '260px',
           background: 'rgba(240,240,240,0.85)',
           backdropFilter: 'blur(10px)',
@@ -483,7 +1087,8 @@ export default function App() {
           borderRadius: '12px',
           padding: '10px',
           boxShadow: '8px 8px 16px rgba(0,0,0,0.15), -8px -8px 16px rgba(255,255,255,0.6)',
-          zIndex: 50
+          zIndex: 50,
+          transition: 'left 0.3s ease-in-out'
         }}>
           <div style={{ fontWeight: 700, color: '#374151', marginBottom: '8px' }}>Canvases</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '60vh', overflowY: 'auto' }}>
@@ -574,6 +1179,157 @@ export default function App() {
         onToggle={() => setShowDebug(false)}
         debugLogs={debugLogs}
       />
+
+      {/* Settings Window */}
+      {showSettings && (
+        <div className="settings-window" style={{
+          position: 'fixed',
+          left: '0',
+          top: '0',
+          width: '200px',
+          height: '100vh',
+          backgroundColor: 'rgba(240,240,240,0.95)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          borderRadius: '0 12px 12px 0',
+          padding: '20px',
+          boxShadow: '8px 0 16px rgba(0,0,0,0.15)',
+          zIndex: 1000,
+          transform: 'translateX(0)',
+          transition: 'transform 0.3s ease-in-out'
+        }}>
+          {/* Settings Header */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '20px',
+            borderBottom: '2px solid rgba(100,100,100,0.2)',
+            paddingBottom: '10px'
+          }}>
+            <h2 style={{
+              margin: 0,
+              color: '#374151',
+              fontSize: '18px',
+              fontWeight: 'bold'
+            }}>
+              ⚙️ Settings
+            </h2>
+          </div>
+
+          {/* Panel Opacity Setting */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}>
+              Panel Opacity: {panelOpacity}%
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={panelOpacity}
+              onChange={(e) => {
+                const newOpacity = parseInt(e.target.value);
+                setPanelOpacity(newOpacity);
+                logDebug('OPACITY_CHANGE', `Panel opacity changed to ${newOpacity}%`);
+              }}
+              style={{
+                width: '100%',
+                height: '6px',
+                borderRadius: '3px',
+                background: 'linear-gradient(to right, rgba(100,100,100,0.3), rgba(100,100,100,0.8))',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '12px',
+              color: '#666',
+              marginTop: '4px'
+            }}>
+              <span>0%</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          {/* Background Image Setting */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              color: '#374151',
+              fontSize: '14px',
+              fontWeight: '600'
+            }}>
+              🖼️ Background Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (event) => {
+                    setBackgroundImage(event.target.result);
+                    logDebug('BACKGROUND_CHANGE', `Background image uploaded: ${file.name}`);
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: '1px solid rgba(100,100,100,0.3)',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                fontSize: '12px'
+              }}
+            />
+            {backgroundImage && (
+              <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                <button
+                  onClick={() => {
+                    setBackgroundImage(null);
+                    logDebug('BACKGROUND_CHANGE', 'Background image removed');
+                  }}
+                  style={{
+                    background: 'rgba(255,0,0,0.1)',
+                    border: '1px solid rgba(255,0,0,0.3)',
+                    borderRadius: '4px',
+                    padding: '4px 8px',
+                    color: '#d32f2f',
+                    cursor: 'pointer',
+                    fontSize: '11px'
+                  }}
+                >
+                  🗑️ Remove Background
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Future Settings Placeholder */}
+          <div style={{
+            padding: '15px',
+            backgroundColor: 'rgba(255,255,255,0.6)',
+            borderRadius: '8px',
+            border: '1px dashed rgba(100,100,100,0.3)',
+            textAlign: 'center',
+            color: '#666',
+            fontSize: '12px'
+          }}>
+            More settings coming soon...
+          </div>
+        </div>
+      )}
     </div>
   );
 }

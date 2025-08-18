@@ -135,7 +135,7 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
     // Log debug info for significant moves
     const panel = panels.find(p => p.id === id);
     if (panel && (Math.abs(panel.x - pos.x) > 5 || Math.abs(panel.y - pos.y) > 5)) {
-      console.log(`DEBUG: Panel ${id} moved to (${pos.x}, ${pos.y})`);
+  
     }
     
     setPanels((prev) => prev.map((p) => (p.id === id ? { ...p, ...pos } : p)));
@@ -165,7 +165,7 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
       if (distance > 5) { // Only log significant movements
-        console.log(`DEBUG: Panel ${id} moved from (${startPos.x}, ${startPos.y}) to (${finalPanel.x}, ${finalPanel.y}) - Distance: ${distance.toFixed(1)}px`);
+    
       }
       
       // Clear the start position
@@ -219,15 +219,10 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
    * Add a panel adjacent to another panel
    */
   const handleAddPanel = useCallback((panelId, side, neighborId) => {
-    console.log(`DEBUG: handleAddPanel called with panelId: ${panelId}, side: ${side}, neighborId: ${neighborId}`);
-    
     const base = panels.find(p => p.id === panelId);
     if (!base) {
-      console.log(`DEBUG: Base panel not found for ID: ${panelId}`);
       return;
     }
-    
-    console.log(`DEBUG: Base panel found:`, base);
     
     // Get current panels before update
     const prevPanels = [...panels];
@@ -235,7 +230,6 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
     setPanels((prev) => {
       const baseNow = prev.find((p) => p.id === panelId);
       if (!baseNow) {
-        console.log(`DEBUG: Base panel not found in current panels for ID: ${panelId}`);
         return prev;
       }
       
@@ -250,8 +244,7 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
       const newPanel = { id: `panel-${Date.now()}`, x, y, title: 'PayTracker' };
       const nextPanels = [...prev, newPanel];
       
-      console.log(`DEBUG: New panel created:`, newPanel);
-      console.log(`DEBUG: Total panels after creation: ${nextPanels.length}`);
+
       
       // Record history for adding panel
       if (addToHistory) {
@@ -282,8 +275,7 @@ export function usePanelManagement(panels, setPanels, addToHistory = null) {
     
     const nextPanels = prevPanels.map(p => p.id === panelId ? { ...p, state } : p);
     
-    // Log debug info only when state actually changes
-    console.log(`DEBUG: Panel ${panelId} state updated:`, state);
+
     
     // Record history for state change but only if not already in an undo/redo operation
     if (addToHistory) {

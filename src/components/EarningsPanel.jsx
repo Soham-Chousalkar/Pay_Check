@@ -5,7 +5,7 @@ import { formatTimeOnly, formatDateOnly, formatDateTime, parseUserDateTime } fro
 /**
  * EarningsPanel - The main component for tracking and displaying earnings
  */
-function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal = true, onStateChange }) {
+function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal = true, onStateChange, panelOpacity = 60 }) {
   const [isRunning, setIsRunning] = useState(false);
   const [hourlyRate, setHourlyRate] = useState(null);
   const [rateInput, setRateInput] = useState("");
@@ -255,7 +255,12 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   const timeDisplay = getTimeDisplay();
 
   return (
-    <div className="p-5 h-full flex flex-col justify-between">
+    <div className="p-5 h-full flex flex-col justify-between" style={{
+      backgroundColor: `rgba(255, 255, 255, ${panelOpacity / 100})`,
+      borderRadius: '20px',
+      border: `2px solid rgba(100, 100, 100, ${panelOpacity / 100 * 0.3})`,
+      boxShadow: `20px 20px 60px rgba(0, 0, 0, ${panelOpacity / 100 * 0.08}), -20px -20px 60px rgba(255, 255, 255, ${panelOpacity / 100 * 0.1})`
+    }}>
       <div className="text-center mb-4">
         <h1
           ref={titleInputRef}

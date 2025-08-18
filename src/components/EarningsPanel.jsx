@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, memo } from "react";
 import { RetroDigitalNumber, RetroDigitalText } from "./RetroDigital";
 import { formatTimeOnly, formatDateOnly, formatDateTime, parseUserDateTime } from "../utils/dateUtils";
 
@@ -25,6 +25,8 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   const titleInputRef = useRef(null);
   const startTimeRef = useRef(null);
   const timerRef = useRef(null);
+  const onStateChangeRef = useRef(onStateChange);
+  useEffect(() => { onStateChangeRef.current = onStateChange; }, [onStateChange]);
 
   const dollarsPerSecond = hourlyRate ? hourlyRate / 3600 : 0;
 
@@ -172,8 +174,8 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
 
     // Debounce the state change updates to prevent maximum update depth exceeded
     const updateState = () => {
-      if (onStateChange) {
-        onStateChange({
+      if (onStateChangeRef.current) {
+        onStateChangeRef.current({
           isRunning,
           hourlyRate,
           accumulatedSeconds,
@@ -187,12 +189,12 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
 
     const timeoutId = setTimeout(updateState, 0);
     return () => clearTimeout(timeoutId);
-  }, [hourlyRate, accumulatedSeconds, isRunning, startTime, endTime, onStateChange, title, earnings]);
+  }, [hourlyRate, accumulatedSeconds, isRunning, startTime, endTime, title, earnings]);
 
   // Update state when earnings change (for real-time updates)
   useEffect(() => {
-    if (onStateChange) {
-      onStateChange({
+    if (onStateChangeRef.current) {
+      onStateChangeRef.current({
         isRunning,
         hourlyRate,
         accumulatedSeconds,
@@ -202,7 +204,7 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
         earnings,
       });
     }
-  }, [earnings, onStateChange, isRunning, hourlyRate, accumulatedSeconds, startTime, endTime, title]);
+  }, [earnings, isRunning, hourlyRate, accumulatedSeconds, startTime, endTime, title]);
 
   // Event handlers
   const handleRateSubmit = (e) => {
@@ -354,7 +356,7 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
                 autoFocus
               />
             ) : (
-              <div 
+              <div
                 className="text-xs text-gray-700 cursor-pointer hover:text-gray-900 transition-colors"
                 onClick={() => setIsEditingRate(true)}
                 title="Click to edit hourly rate"
@@ -422,4 +424,4 @@ function EarningsPanel({ panelTitleDefault = "PayTracker", useRetroStyleGlobal =
   );
 }
 
-export default EarningsPanel;
+export default memo(EarningsPanel);

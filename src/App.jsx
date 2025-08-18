@@ -309,7 +309,7 @@ export default function App() {
     // First, check if the dragged panel should be added to an existing group
     for (const [groupId, group] of Object.entries(groups)) {
       const groupPanels = panels.filter(p => group.panelIds.includes(p.id));
-      
+
       // Check if dragged panel overlaps with any panel in this group
       for (const groupPanel of groupPanels) {
         const shouldGroup = shouldGroupPanels(draggedPanelWithDimensions, groupPanel);
@@ -317,7 +317,7 @@ export default function App() {
           // Add panel to existing group
           const allPanelIds = [...group.panelIds, draggedPanelId];
           const totalEarnings = calculateGroupEarnings(allPanelIds);
-          
+
           return {
             type: 'addToExisting',
             groupId: groupId,
@@ -334,9 +334,9 @@ export default function App() {
     // If not adding to existing group, check for creating new group with overlapping panels
     const overlappingPanels = panels.filter(panel => {
       if (panel.id === draggedPanelId) return false;
-      
+
       // Don't include panels that already belong to groups
-      const isInGroup = Object.values(groups).some(group => 
+      const isInGroup = Object.values(groups).some(group =>
         group.panelIds.includes(panel.id)
       );
       if (isInGroup) return false;
@@ -428,7 +428,8 @@ export default function App() {
 
       // Rearrange panels in the updated group
       rearrangeGroupPanels(updatedGroup);
-      
+      setTimeout(() => recalculateGroupContainer(groupingData.groupId), 0);
+
       logDebug('PANEL_ADDED_TO_GROUP', `Panel ${groupingData.draggedPanelId} added to group ${groupingData.groupId}`);
       return groupingData.groupId;
     } else {
@@ -447,6 +448,7 @@ export default function App() {
 
       // Rearrange panels in the new group
       rearrangeGroupPanels(newGroup);
+      setTimeout(() => recalculateGroupContainer(groupId), 0);
 
       logDebug('GROUP_CREATED', `Group ${groupId} created with ${groupingData.allPanelIds.length} panels, total: $${groupingData.totalEarnings.toFixed(2)}`);
       return groupId;
@@ -765,13 +767,28 @@ export default function App() {
                 handleDrag(panelId, pos);
               }}
               onDragEnd={(panelId) => {
-                // Get the final position for debug logging
                 const finalPanel = panels.find(p => p.id === panelId);
                 if (finalPanel) {
+                  const currentGroup = Object.values(groups).find(g => g.panelIds.includes(panelId));
+                  if (currentGroup && currentGroup.containerX !== undefined && currentGroup.containerY !== undefined) {
+                    const padding = 20, header = 60, spacing = 30;
+                    const originX = currentGroup.containerX + padding;
+                    const originY = currentGroup.containerY + padding + header;
+                    const stepX = PANEL_WIDTH + spacing;
+                    const stepY = PANEL_HEIGHT + spacing;
+                    const col = Math.round((finalPanel.x - originX) / stepX);
+                    const row = Math.round((finalPanel.y - originY) / stepY);
+                    const snappedX = originX + col * stepX;
+                    const snappedY = originY + row * stepY;
+                    const maxX = currentGroup.containerX + currentGroup.containerWidth - PANEL_WIDTH - padding;
+                    const maxY = currentGroup.containerY + currentGroup.containerHeight - PANEL_HEIGHT - padding;
+                    const x = Math.max(originX, Math.min(snappedX, maxX));
+                    const y = Math.max(originY, Math.min(snappedY, maxY));
+                    setPanels(prev => prev.map(p => p.id === panelId ? { ...p, x, y } : p));
+                  }
                   handleDragEnd(panelId);
                 }
 
-                // Check if we should create a group
                 if (groupingPreview && groupingPreview.draggedPanelId === panelId) {
                   createGroup(groupingPreview);
                   setGroupingPreview(null);
@@ -959,6 +976,7 @@ export default function App() {
           const containerTop = centerY - (containerHeight / 2);
 
           // Handle group dragging
+          let activeGroupEl = null;
           const handleGroupDragStart = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -967,20 +985,23 @@ export default function App() {
             groupPanels.forEach(panel => {
               initialPositions[panel.id] = { x: panel.x, y: panel.y };
             });
-            e.currentTarget.dataset.initialPositions = JSON.stringify(initialPositions);
-            e.currentTarget.dataset.startX = e.clientX;
-            e.currentTarget.dataset.startY = e.clientY;
-            e.currentTarget.dataset.isDragging = 'true';
+            activeGroupEl = e.currentTarget;
+            activeGroupEl.dataset.initialPositions = JSON.stringify(initialPositions);
+            activeGroupEl.dataset.startX = e.clientX;
+            activeGroupEl.dataset.startY = e.clientY;
+            activeGroupEl.dataset.isDragging = 'true';
+            document.addEventListener('mousemove', handleGroupDrag);
+            document.addEventListener('mouseup', handleGroupDragEnd);
           };
 
           const handleGroupDrag = (e) => {
-            if (e.currentTarget.dataset.isDragging !== 'true') return;
+            if (!activeGroupEl || activeGroupEl.dataset.isDragging !== 'true') return;
 
-            const initialPositions = JSON.parse(e.currentTarget.dataset.initialPositions || '{}');
-            const startX = parseInt(e.currentTarget.dataset.startX);
-            const startY = parseInt(e.currentTarget.dataset.startY);
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
+            const initialPositions = JSON.parse(activeGroupEl.dataset.initialPositions || '{}');
+            const startX = parseInt(activeGroupEl.dataset.startX);
+            const startY = parseInt(activeGroupEl.dataset.startY);
+            const deltaX = (e.clientX - startX) / scale;
+            const deltaY = (e.clientY - startY) / scale;
 
             // Use the same simple logic as individual panel dragging
             setPanels(prev => prev.map(panel => {
@@ -1010,11 +1031,15 @@ export default function App() {
             }
           };
 
-          const handleGroupDragEnd = (e) => {
-            e.currentTarget.dataset.isDragging = 'false';
-            delete e.currentTarget.dataset.initialPositions;
-            delete e.currentTarget.dataset.startX;
-            delete e.currentTarget.dataset.startY;
+          const handleGroupDragEnd = () => {
+            if (!activeGroupEl) return;
+            activeGroupEl.dataset.isDragging = 'false';
+            delete activeGroupEl.dataset.initialPositions;
+            delete activeGroupEl.dataset.startX;
+            delete activeGroupEl.dataset.startY;
+            document.removeEventListener('mousemove', handleGroupDrag);
+            document.removeEventListener('mouseup', handleGroupDragEnd);
+            activeGroupEl = null;
           };
 
           return (
@@ -1038,9 +1063,8 @@ export default function App() {
                 userSelect: 'none'
               }}
               onMouseDown={handleGroupDragStart}
-              onMouseMove={handleGroupDrag}
               onMouseUp={handleGroupDragEnd}
-              onMouseLeave={handleGroupDragEnd}
+
             >
               {/* Group Header - Neumorphic style at top */}
               <div

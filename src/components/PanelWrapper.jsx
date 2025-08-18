@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback, memo } from "react";
 import EarningsPanel from "./EarningsPanel";
 import { PANEL_WIDTH, PANEL_HEIGHT } from "../utils/panelUtils";
 
@@ -155,7 +155,7 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
 
         <EarningsPanel
           useRetroStyleGlobal={useRetroStyleGlobal}
-          onStateChange={(state) => onStateChange(panel.id, state)}
+          onStateChange={useCallback((state) => onStateChange(panel.id, state), [onStateChange, panel.id])}
           panelOpacity={panelOpacity}
         />
       </div>
@@ -163,4 +163,4 @@ function PanelWrapper({ panel, onDragStart, onDrag, onDragEnd, useRetroStyleGlob
   );
 }
 
-export default PanelWrapper;
+export default memo(PanelWrapper);

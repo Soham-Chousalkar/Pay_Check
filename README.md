@@ -2,6 +2,10 @@
 
 A modern, elegant time-tracking application built with React and Vite. Track your work hours and calculate earnings in real-time with a beautiful, seamless interface featuring glassmorphism effects and intuitive controls.
 
+## 🌐 Live Demo
+
+**[🚀 Try Pay Check Live](https://pay-check-lilac.vercel.app/)** - Access the application 24/7 on Vercel
+
 ## 📁 Project Structure
 
 ```
@@ -30,6 +34,28 @@ Pay Check - Cursor/
 └── tailwind.config.js         # Tailwind CSS configuration
 ```
 
+## 🖼️ Screenshots
+
+### Homepage
+![Homepage](assets/images/screenshots/homepage.png)
+*Clean, modern interface with glassmorphism effects*
+
+### Main Panel
+![Panel](assets/images/screenshots/Panel.png)
+*Central control panel with earnings display and timer controls*
+
+### Canvas System
+![Canvases](assets/images/screenshots/Canvases.png)
+*Multiple canvas layers for rich visual experience*
+
+### Debug Window
+![Debug Window](assets/images/screenshots/Debug-window.png)
+*Real-time debugging and state monitoring*
+
+### Undo/Redo Controls
+![Undo/Redo](assets/images/screenshots/undo-redo.png)
+*History navigation controls*
+
 ## 🚀 Quick Start
 
 1. **Install dependencies:**
@@ -52,10 +78,6 @@ Pay Check - Cursor/
 - **[Full Documentation](docs/README.md)** - Complete project guide
 - **[Optimization Summary](docs/OPTIMIZATION_SUMMARY.md)** - Performance improvements
 - **[Development Progress](docs/progress.txt)** - Project milestones
-
-## 🖼️ Screenshots
-
-View application screenshots in the [assets/images/screenshots/](assets/images/screenshots/) directory.
 
 ## 🛠️ Available Scripts
 

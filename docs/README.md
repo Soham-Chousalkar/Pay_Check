@@ -2,6 +2,10 @@
 
 A modern, elegant time-tracking application built with React and Vite. Track your work hours and calculate earnings in real-time with a beautiful, seamless interface featuring glassmorphism effects and intuitive controls.
 
+## 🌐 Live Demo
+
+**[🚀 Try Pay Check Live](https://pay-check-lilac.vercel.app/)** - Access the application 24/7 on Vercel
+
 ## ✨ Features
 
 - **Real-time Earnings Calculation**: Track earnings based on your hourly rate

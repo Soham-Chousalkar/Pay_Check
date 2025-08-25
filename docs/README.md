@@ -40,6 +40,14 @@ A modern, elegant time-tracking application built with React and Vite. Track you
 ![Undo/Redo](../assets/images/screenshots/undo-redo.png)
 *History navigation controls*
 
+### Settings Panel
+![Settings](../assets/images/screenshots/Settings.png)
+*Application settings and configuration options*
+
+### Grouping Interface
+![Grouping](../assets/images/screenshots/Grouping.png)
+*Advanced grouping and organization features*
+
 ## 🚀 Getting Started
 
 ### Prerequisites

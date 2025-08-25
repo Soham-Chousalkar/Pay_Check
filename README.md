@@ -66,6 +66,18 @@ Pay Check - Cursor/
 *History navigation controls*
 
 
+### Settings Panel
+![Settings](assets/images/screenshots/Settings.png)
+
+*Application settings and configuration options*
+
+
+### Grouping Interface
+![Grouping](assets/images/screenshots/Grouping.png)
+
+*Advanced grouping and organization features*
+
+
 ## 🚀 Quick Start
 
 1. **Install dependencies:**

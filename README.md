@@ -38,23 +38,33 @@ Pay Check - Cursor/
 
 ### Homepage
 ![Homepage](assets/images/screenshots/homepage.png)
+
 *Clean, modern interface with glassmorphism effects*
+
 
 ### Main Panel
 ![Panel](assets/images/screenshots/Panel.png)
+
 *Central control panel with earnings display and timer controls*
+
 
 ### Canvas System
 ![Canvases](assets/images/screenshots/Canvases.png)
+
 *Multiple canvas layers for rich visual experience*
+
 
 ### Debug Window
 ![Debug Window](assets/images/screenshots/Debug-window.png)
+
 *Real-time debugging and state monitoring*
+
 
 ### Undo/Redo Controls
 ![Undo/Redo](assets/images/screenshots/undo-redo.png)
+
 *History navigation controls*
+
 
 ## 🚀 Quick Start
 

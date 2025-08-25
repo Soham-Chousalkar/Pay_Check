@@ -266,6 +266,8 @@ export default function App() {
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
 
+
+
   // Keyboard shortcut handler for undo/redo
   useEffect(() => {
     const handleKeyDown = (e) => {

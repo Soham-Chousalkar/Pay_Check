@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import PanelWrapper from "./components/PanelWrapper";
 import DebugWindow from "./components/DebugWindow";
 import { useHistory } from "./hooks/useHistory";
@@ -1429,6 +1430,7 @@ export default function App() {
 
       {/* Vercel Analytics */}
       <Analytics />
+      <SpeedInsights />
     </div>
   );
 }

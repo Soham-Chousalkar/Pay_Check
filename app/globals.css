@@ -1,0 +1,228 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables for Retro Digital Display */
+:root {
+    --retro-segment-color: #1a1a1a;
+    --retro-segment-shadow: rgba(0, 0, 0, 0.15);
+}
+
+.retro-digital-container {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 600px;
+}
+
+/* Retro Digital 7-Segment Display */
+.retro-digital {
+    display: inline-block;
+    font-family: monospace;
+    font-weight: bold;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.retro-digital img {
+    vertical-align: middle;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.retro-digit {
+    position: relative;
+    display: inline-block;
+    width: 0.9em;
+    height: 1.6em;
+    margin: 0 0.08em;
+    font-weight: 900;
+}
+
+.segment {
+    position: absolute;
+    background: var(--retro-segment-color);
+    box-shadow: 2px 2px 4px var(--retro-segment-shadow);
+    border-radius: 1px;
+}
+
+.segment-a {
+    width: 0.65em;
+    height: 0.12em;
+    left: 0.125em;
+    top: 0.1em;
+}
+
+.segment-b {
+    width: 0.12em;
+    height: 0.6em;
+    right: 0.125em;
+    top: 0.15em;
+}
+
+.segment-c {
+    width: 0.12em;
+    height: 0.6em;
+    right: 0.125em;
+    bottom: 0.15em;
+}
+
+.segment-d {
+    width: 0.65em;
+    height: 0.12em;
+    left: 0.125em;
+    bottom: 0.1em;
+}
+
+.segment-e {
+    width: 0.12em;
+    height: 0.6em;
+    left: 0.125em;
+    bottom: 0.15em;
+}
+
+.segment-f {
+    width: 0.12em;
+    height: 0.6em;
+    left: 0.125em;
+    top: 0.15em;
+}
+
+.segment-g {
+    width: 0.65em;
+    height: 0.12em;
+    left: 0.125em;
+    top: 0.75em;
+}
+
+.segment-char {
+    width: 0.6em;
+    height: 0.12em;
+    left: 0.15em;
+    top: 0.75em;
+}
+
+/* PayTracker Application Styles */
+.style-toggle-container {
+    position: fixed;
+    z-index: 1001;
+}
+
+.style-toggle-button {
+    background: #ECEEDF;
+    border: 1px solid #D9C4B0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #CFAB8D;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.style-toggle-button:hover {
+    background: #D9C4B0;
+    border-color: #CFAB8D;
+    color: #ECEEDF;
+    transform: translateY(-1px);
+}
+
+.new-canvas-btn {
+    background: #D9C4B0;
+    border-color: #CFAB8D;
+    color: #ECEEDF;
+}
+
+.new-canvas-btn:hover {
+    background: #CFAB8D;
+    border-color: #D9C4B0;
+    color: #ECEEDF;
+}
+
+.toggle-icon {
+    font-size: 16px;
+    margin-right: 4px;
+}
+
+.toggle-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Panel Styles */
+.panel-wrapper {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+}
+
+.main-panel {
+    background: #ECEEDF;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid #D9C4B0;
+    overflow: hidden;
+}
+
+.panel-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.panel-delete-btn:hover {
+    background: rgba(239, 68, 68, 1);
+}
+
+/* Canvas Library */
+.canvas-library {
+    background: rgba(31, 41, 55, 0.95);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+/* Control Button */
+.control-button {
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.control-button:hover {
+    background: rgba(59, 130, 246, 1);
+    transform: translateY(-1px);
+}
+
+.control-button:disabled {
+    background: rgba(75, 85, 99, 0.5);
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Smooth Transitions */
+.smooth-transition {
+    transition: all 0.3s ease;
+}

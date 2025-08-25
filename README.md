@@ -18,23 +18,33 @@ A modern, elegant time-tracking application built with React and Vite. Track you
 
 ### Homepage
 ![Homepage](screenshots/homepage.png)
+
 *Clean, modern interface with glassmorphism effects*
+
 
 ### Main Panel
 ![Panel](screenshots/Panel.png)
+
 *Central control panel with earnings display and timer controls*
+
 
 ### Canvas System
 ![Canvases](screenshots/Canvases.png)
+
 *Multiple canvas layers for rich visual experience*
+
 
 ### Debug Window
 ![Debug Window](screenshots/Debug-window.png)
+
 *Real-time debugging and state monitoring*
+
 
 ### Undo/Redo Controls
 ![Undo/Redo](screenshots/undo-redo.png)
+
 *History navigation controls*
+
 
 ## 🚀 Getting Started
 

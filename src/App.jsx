@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import PanelWrapper from "./components/PanelWrapper";
 import DebugWindow from "./components/DebugWindow";
 import { useHistory } from "./hooks/useHistory";
@@ -1425,6 +1426,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Vercel Analytics */}
+      <Analytics />
     </div>
   );
 }

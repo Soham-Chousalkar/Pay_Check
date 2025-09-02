@@ -4,7 +4,8 @@ import { authService } from '../services/authService.js'
 export default function RegisterForm({ onRegister, onSwitchToLogin }) {
     const [formData, setFormData] = useState({
         name: '',
-        email: ''
+        email: '',
+        password: ''
     })
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -17,10 +18,10 @@ export default function RegisterForm({ onRegister, onSwitchToLogin }) {
         setSuccess('')
 
         try {
-            const result = await authService.register(formData.name, formData.email)
+            const result = await authService.register(formData.name, formData.email, formData.password)
             if (result.success) {
                 setSuccess(result.message)
-                setFormData({ name: '', email: '' })
+                setFormData({ name: '', email: '', password: '' })
             }
         } catch (err) {
             setError(err.message)
@@ -83,10 +84,26 @@ export default function RegisterForm({ onRegister, onSwitchToLogin }) {
                                 type="email"
                                 autoComplete="email"
                                 required
-                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                                 placeholder="Email address"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="password" className="sr-only">
+                                Password
+                            </label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autoComplete="new-password"
+                                required
+                                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                placeholder="Password"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                             />
                         </div>
                     </div>

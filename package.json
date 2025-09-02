@@ -4,14 +4,25 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000 --open",
+    "dev": "vite --port 3000",
+    "dev:api": "node ./api/server.js",
+    "dev:all": "concurrently -k -n FRONTEND,BACKEND -c auto \"npm:dev\" \"npm:dev:api\"",
     "build": "vite build",
     "preview": "vite preview --port 3000 --open",
     "serve": "serve -s dist -l 3000"
   },
   "dependencies": {
+    "@libsql/client": "^0.5.6",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^7.0.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
@@ -19,6 +30,7 @@
     "@tailwindcss/postcss": "^4.1.11",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "vite": "^7.1.0"

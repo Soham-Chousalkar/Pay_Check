@@ -3,11 +3,14 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import PanelWrapper from "./components/PanelWrapper";
 import DebugWindow from "./components/DebugWindow";
+import AuthPage from "./components/AuthPage";
 import { useHistory } from "./hooks/useHistory";
 import { useCanvas } from "./hooks/useCanvas";
 import { usePanelManagement } from "./hooks/usePanelManagement";
 import { usePanelEdgeDetection } from "./hooks/usePanelEdgeDetection";
 import { PANEL_WIDTH, PANEL_HEIGHT, shouldGroupPanels } from "./utils/panelUtils";
+import { useDataSync } from "./hooks/useDataSync";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Zoom constants
 const ZOOM_MIN = 0.01; // Allow zooming out to 1% (infinite zoom out)
@@ -16,7 +19,11 @@ const ZOOM_MAX = 10; // Allow zooming in to 1000% (single panel fits screen)
 /**
  * Main App component - PayTracker
  */
-export default function App() {
+function AppContent() {
+  const { user, loading: authLoading } = useAuth();
+  // Data sync
+  const { loading: dataLoading, error: dataError, loadUserData, saveCanvas, savePreferences } = useDataSync();
+
   // Global state
   const [scale, setScale] = useState(1);
   const [useRetroStyle, setUseRetroStyle] = useState(false); // Always basic font by default
@@ -42,6 +49,18 @@ export default function App() {
     canUndo,
     canRedo
   } = useHistory(50); // Keep up to 50 history entries
+
+  // Load user data on mount
+  useEffect(() => {
+    if (!dataLoading) {
+      loadUserData().then((userData) => {
+        if (userData && userData.length > 0) {
+          // TODO: Integrate with existing canvas state
+          console.log('Loaded user data:', userData);
+        }
+      });
+    }
+  }, [dataLoading, loadUserData]);
 
   // Smart debug logging function that combines similar actions
   const logDebug = useCallback((action, details = null) => {
@@ -480,6 +499,25 @@ export default function App() {
     logDebug('GROUP_TITLE_UPDATED', `Group ${groupId} title changed to: ${newTitle}`);
   }, [logDebug]);
 
+
+
+  // Show loading screen while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if user is not authenticated
+  if (!user) {
+    return <AuthPage onLogin={() => window.location.reload()} />;
+  }
+
   return (
     <div
       ref={stageRef}
@@ -514,6 +552,8 @@ export default function App() {
           <span className="toggle-text">Settings</span>
         </button>
       </div>
+
+
 
       {/* Combined Canvases button with + button */}
       <div className="style-toggle-container" style={{
@@ -1434,5 +1474,13 @@ export default function App() {
       <Analytics />
       <SpeedInsights />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

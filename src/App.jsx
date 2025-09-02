@@ -1455,18 +1455,25 @@ function AppContent() {
             )}
           </div>
 
-          {/* Future Settings Placeholder */}
-          <div style={{
-            padding: '15px',
-            backgroundColor: 'rgba(255,255,255,0.6)',
-            borderRadius: '8px',
-            border: '1px dashed rgba(100,100,100,0.3)',
-            textAlign: 'center',
-            color: '#666',
-            fontSize: '12px'
-          }}>
-            More settings coming soon...
-          </div>
+          {/* Logout Button */}
+          {user && (
+            <button
+              onClick={logout}
+              style={{
+                width: '100%',
+                padding: '8px 16px',
+                backgroundColor: 'rgba(220,38,38,0.1)',
+                border: '1px solid rgba(220,38,38,0.3)',
+                borderRadius: '6px',
+                color: '#dc2626',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}
+            >
+              🚪 Logout
+            </button>
+          )}
         </div>
       )}
 

@@ -1,137 +1,78 @@
-import { TursoAdapter } from '../adapters/TursoAdapter.js'
+// Database service disabled - using API calls instead
+// import { TursoAdapter } from '../adapters/TursoAdapter.js'
 
 // Initialize database adapter
-const db = new TursoAdapter()
+// const db = new TursoAdapter()
 
-// Canvas operations
+// Canvas operations - disabled for now
 export const canvasService = {
   async create(title, data) {
-    try {
-      return await db.createCanvas(title, data)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async getAll() {
-    try {
-      return await db.getAllCanvases()
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async getById(id) {
-    try {
-      return await db.getCanvasById(id)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async update(id, updates) {
-    try {
-      return await db.updateCanvas(id, updates)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async delete(id) {
-    try {
-      await db.deleteCanvas(id)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   }
 }
 
-// Panel operations
+// Panel operations - disabled for now
 export const panelService = {
   async create(canvasId, config) {
-    try {
-      return await db.createPanel(canvasId, config)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async getByCanvasId(canvasId) {
-    try {
-      return await db.getPanelsByCanvasId(canvasId)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async update(id, updates) {
-    try {
-      return await db.updatePanel(id, updates)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async delete(id) {
-    try {
-      await db.deletePanel(id)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async deleteByCanvasId(canvasId) {
-    try {
-      await db.deletePanelsByCanvasId(canvasId)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   }
 }
 
-// Paycheck counter operations
+// Paycheck counter operations - disabled for now
 export const counterService = {
   async create(canvasId, value = 0) {
-    try {
-      return await db.createCounter(canvasId, value)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async getByCanvasId(canvasId) {
-    try {
-      return await db.getCounterByCanvasId(canvasId)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async update(canvasId, value) {
-    try {
-      return await db.updateCounter(canvasId, value)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   }
 }
 
-// Preferences operations
+// Preferences operations - disabled for now
 export const preferencesService = {
   async get() {
-    try {
-      return await db.getPreferences()
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   },
 
   async update(settings) {
-    try {
-      return await db.updatePreferences(settings)
-    } catch (error) {
-      throw new Error(error.message)
-    }
+    throw new Error('Database service disabled - use API calls')
   }
 }
 

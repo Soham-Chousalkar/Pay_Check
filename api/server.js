@@ -45,5 +45,9 @@ app.use((err, req, res, next) => {
   })
 })
 
+// Only start server if not in serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  startServer()
+}
 
-startServer()
+export default app

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { authService } from '../services/authService.js'
+import { safeJson } from '../utils/safeJson.js'
 
 export default function LoginForm({ onLogin, onSwitchToRegister }) {
     const [formData, setFormData] = useState({
@@ -48,7 +49,11 @@ export default function LoginForm({ onLogin, onSwitchToRegister }) {
                 body: JSON.stringify({ email: formData.email })
             })
 
-            const result = await response.json()
+            if (!response.ok) {
+                const msg = await response.text().catch(() => '')
+                throw new Error(`API error ${response.status}: ${msg}`)
+            }
+            const result = await safeJson(response)
 
             if (result.success) {
                 setError('')

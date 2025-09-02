@@ -31,9 +31,18 @@ export async function initDatabase() {
           .map(s => s.trim())
           .filter(s => s.length > 0)
 
-        for (const stmt of statements) {
-          await client.execute(stmt)
-        }
+          for (const stmt of statements) {
+            try {
+              await client.execute(stmt)
+            } catch (err) {
+              if (err.message.includes('duplicate column name')) {
+                console.log('Skipping duplicate column:', err.message)
+                continue
+              }
+              throw err
+            }
+          }
+          
         console.log('Database schema executed successfully')
       } else {
         console.log('Schema file is empty, skipping execution')

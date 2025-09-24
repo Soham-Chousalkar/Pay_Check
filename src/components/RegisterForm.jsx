@@ -33,7 +33,7 @@ export default function RegisterForm({ onRegister, onSwitchToLogin }) {
 
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="w-1/3 mx-auto space-y-6" style={{
                 background: '#ECEEDF',
                 borderRadius: '12px',

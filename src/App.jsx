@@ -20,7 +20,7 @@ const ZOOM_MAX = 10; // Allow zooming in to 1000% (single panel fits screen)
  * Main App component - PayTracker
  */
 function AppContent() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, login, logout } = useAuth();
   // Data sync
   const { loading: dataLoading, error: dataError, loadUserData, saveCanvas, savePreferences } = useDataSync();
 
@@ -35,6 +35,7 @@ function AppContent() {
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [groups, setGroups] = useState({});
   const [groupVisibility, setGroupVisibility] = useState({});
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Refs
   const stageRef = useRef(null);
@@ -50,17 +51,21 @@ function AppContent() {
     canRedo
   } = useHistory(50); // Keep up to 50 history entries
 
-  // Load user data on mount
+  // Load user data once when user is available
   useEffect(() => {
-    if (!dataLoading) {
+    let isCancelled = false;
+    if (user) {
       loadUserData().then((userData) => {
-        if (userData && userData.length > 0) {
+        if (!isCancelled && userData && userData.length > 0) {
           // TODO: Integrate with existing canvas state
           console.log('Loaded user data:', userData);
         }
       });
     }
-  }, [dataLoading, loadUserData]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [user, loadUserData]);
 
   // Smart debug logging function that combines similar actions
   const logDebug = useCallback((action, details = null) => {
@@ -513,10 +518,7 @@ function AppContent() {
     );
   }
 
-  // Show login page if user is not authenticated
-  if (!user) {
-    return <AuthPage onLogin={() => window.location.reload()} />;
-  }
+  // Note: Homepage is accessible without login. We keep rendering and gate DB actions elsewhere.
 
   return (
     <div
@@ -529,6 +531,28 @@ function AppContent() {
         backgroundRepeat: backgroundImage ? 'no-repeat' : undefined
       }}
     >
+      {/* Top-right Login/Logout button */}
+      <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1100, display: 'flex', gap: '8px' }}>
+        {!user ? (
+          <button
+            className="style-toggle-button"
+            onClick={() => setShowLoginModal(true)}
+            title="Login"
+          >
+            <span className="toggle-icon">🔐</span>
+            <span className="toggle-text">Login</span>
+          </button>
+        ) : (
+          <button
+            className="style-toggle-button"
+            onClick={logout}
+            title="Logout"
+          >
+            <span className="toggle-icon">🚪</span>
+            <span className="toggle-text">Logout</span>
+          </button>
+        )}
+      </div>
       {/* Settings button (hamburger menu) */}
       <div className="style-toggle-container" style={{
         left: '20px',
@@ -1480,6 +1504,38 @@ function AppContent() {
       {/* Vercel Analytics */}
       <Analytics />
       <SpeedInsights />
+
+      {/* Login Modal Overlay */}
+      {showLoginModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.25)',
+            backdropFilter: 'blur(6px)',
+            WebkitBackdropFilter: 'blur(6px)',
+            zIndex: 1200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}
+          onClick={() => setShowLoginModal(false)}
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '720px',
+
+
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AuthPage onLogin={(u) => { login(u); setShowLoginModal(false); }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

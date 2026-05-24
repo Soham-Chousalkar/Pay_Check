@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan stopwatch - Credila tracker</title>
+    <!-- Google Fonts for premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --accent-red: #ef4444;
+            --accent-red-glow: rgba(239, 68, 68, 0.25);
+            --text-black: #111827;
+            --card-inner-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        /* Subtle interactive canvas background grids */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            top: -25%;
+            left: -25%;
+            z-index: -1;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(239, 68, 68, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(30, 41, 59, 0.2) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.003) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.003) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            z-index: 10;
+        }
+
+        @media (min-width: 900px) {
+            .container {
+                grid-template-columns: 4fr 6fr;
+            }
+        }
+
+        /* Glassmorphic card premium system */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 
+                0 4px 30px rgba(0, 0, 0, 0.3),
+                inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: transparent;
+            transition: background 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 8px 40px rgba(0, 0, 0, 0.4),
+                inset 0 1px 1px rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        /* Column layouts */
+        .column-left {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .withdrawal-card {
+            padding: 1.25rem 1.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .withdrawal-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Strict Raw Data Styling (No labels allowed) */
+        .raw-principal {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+        }
+
+        .raw-date {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .raw-rate {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .raw-owing {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-red);
+            font-family: 'Ubuntu Mono', monospace;
+            letter-spacing: -0.01em;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+        }
+
+        /* Summary Ticker Layout (Right column) */
+        .summary-card {
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.7) 0%, rgba(10, 15, 30, 0.8) 100%);
+        }
+
+        .summary-card::before {
+            background: linear-gradient(90deg, var(--accent-red) 0%, #f43f5e 100%);
+        }
+
+        .total-disbursed-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .total-disbursed-value {
+            font-size: 2.25rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+        }
+
+        .ticker-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin: auto 0;
+            padding: 2rem 0;
+        }
+
+        /* Stopwatch millisecond fonts and animations */
+        .stopwatch-inr {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--accent-red);
+            font-family: 'Ubuntu Mono', monospace;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            text-shadow: 0 0 30px var(--accent-red-glow);
+            word-break: break-all;
+        }
+
+        .stopwatch-usd {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-red);
+            font-family: 'Ubuntu Mono', monospace;
+            letter-spacing: -0.03em;
+            opacity: 0.85;
+            text-shadow: 0 0 20px var(--accent-red-glow);
+        }
+
+        /* Rate Configuration Input (Simplistic) */
+        .config-panel {
+            margin-top: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .config-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .config-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            width: 70px;
+            text-align: right;
+            outline: none;
+        }
+
+        .config-input:focus {
+            border-color: var(--accent-red);
+        }
+
+        /* Built-in Browser Unit Test Drawer */
+        .test-drawer {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            background: #0f1322;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            display: none; /* Controlled by URL search parameter ?test=true */
+        }
+
+        .test-header {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .test-summary-badge {
+            font-family: 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .test-summary-badge.all-pass {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .test-summary-badge.fail {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .test-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .test-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.01);
+            border-radius: 6px;
+        }
+
+        .test-name {
+            color: var(--text-secondary);
+        }
+
+        .test-status {
+            font-weight: 700;
+        }
+
+        .test-status.pass {
+            color: #10b981;
+        }
+
+        .test-status.fail {
+            color: #ef4444;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        .footer a {
+            color: var(--text-primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Left Column: 3 Stacked Cards (Strict raw-data) -->
+        <div class="column-left">
+            
+            <!-- Withdrawal Card 1 -->
+            <div class="card withdrawal-card" id="withdrawal-1">
+                <div class="raw-principal">₹1,625,368.00</div>
+                <div class="raw-date">2024-06-07</div>
+                <div class="raw-rate" id="rate-val-1">12.00%</div>
+                <div class="raw-owing" id="owing-val-1">₹0.00</div>
+            </div>
+
+            <!-- Withdrawal Card 2 -->
+            <div class="card withdrawal-card" id="withdrawal-2">
+                <div class="raw-principal">₹900,000.00</div>
+                <div class="raw-date">2025-01-16</div>
+                <div class="raw-rate" id="rate-val-2">12.00%</div>
+                <div class="raw-owing" id="owing-val-2">₹0.00</div>
+            </div>
+
+            <!-- Withdrawal Card 3 -->
+            <div class="card withdrawal-card" id="withdrawal-3">
+                <div class="raw-principal">₹900,000.00</div>
+                <div class="raw-date">2025-07-19</div>
+                <div class="raw-rate" id="rate-val-3">12.00%</div>
+                <div class="raw-owing" id="owing-val-3">₹0.00</div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Big Summary Stopwatch Ticker Card -->
+        <div class="card summary-card">
+            
+            <div class="total-disbursed-container">
+                <div class="total-disbursed-value">₹3,425,370.00</div>
+            </div>
+
+            <div class="ticker-container">
+                <!-- Ticks continuously to 2 decimal places -->
+                <div class="stopwatch-inr" id="stopwatch-inr-val">₹0.00</div>
+                <div class="stopwatch-usd" id="stopwatch-usd-val">$0.00</div>
+            </div>
+
+            <!-- Custom Conversion Variable Settings -->
+            <div class="config-panel">
+                <span class="config-label">USD / INR Exchange Rate</span>
+                <input type="number" id="usd-rate-input" class="config-input" value="83.50" step="0.05" min="10">
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Built-in Browser Unit Test Drawer -->
+    <div class="test-drawer" id="test-drawer-el">
+        <div class="test-header">
+            <span class="test-title">Embedded Browser Test Runner</span>
+            <span class="test-summary-badge all-pass" id="test-summary-badge-el">Running Tests...</span>
+        </div>
+        <div class="test-body" id="test-body-el">
+            <!-- Dynamic Test results go here -->
+        </div>
+    </div>
+
+    <div class="footer">
+        Strict Simple stopwatch Engine &bull; <a onclick="toggleTestView()">Toggle Test Suite Panel</a>
+    </div>
+
+    <script>
+        // Core Constants & Schedules
+        const MILLISECONDS_IN_YEAR = 365 * 24 * 60 * 60 * 1000; // 31,536,000,000 ms
+
+        const WITHDRAWALS = [
+            {
+                id: 1,
+                principal: 1625368.00,
+                disbursalDate: new Date("2024-06-07T00:00:00Z"),
+                pmi: 1505,
+                // Step-up Rate intervals
+                rates: [
+                    { start: new Date("2024-06-07T00:00:00Z"), end: new Date("2024-11-01T00:00:00Z"), rate: 0.12 },
+                    { start: new Date("2024-11-01T00:00:00Z"), end: new Date("2025-08-01T00:00:00Z"), rate: 0.122 },
+                    { start: new Date("2025-08-01T00:00:00Z"), end: null, rate: 0.12 }
+                ]
+            },
+            {
+                id: 2,
+                principal: 900000.00,
+                disbursalDate: new Date("2025-01-16T00:00:00Z"),
+                pmi: 833,
+                rates: [
+                    { start: new Date("2025-01-16T00:00:00Z"), end: new Date("2025-08-01T00:00:00Z"), rate: 0.122 },
+                    { start: new Date("2025-08-01T00:00:00Z"), end: null, rate: 0.12 }
+                ]
+            },
+            {
+                id: 3,
+                principal: 900000.00,
+                disbursalDate: new Date("2025-07-19T00:00:00Z"),
+                pmi: 833,
+                rates: [
+                    { start: new Date("2025-07-19T00:00:00Z"), end: null, rate: 0.12 }
+                ]
+            }
+        ];
+
+        // Total manual prepayments / payments recovered by bank up to 31-12-2025
+        const TOTAL_MANUAL_INTEREST_PAID = 41923;
+
+        // Dom Elements Cache
+        const owingValEls = {
+            1: document.getElementById('owing-val-1'),
+            2: document.getElementById('owing-val-2'),
+            3: document.getElementById('owing-val-3')
+        };
+        const rateValEls = {
+            1: document.getElementById('rate-val-1'),
+            2: document.getElementById('rate-val-2'),
+            3: document.getElementById('rate-val-3')
+        };
+        const stopwatchInrEl = document.getElementById('stopwatch-inr-val');
+        const stopwatchUsdEl = document.getElementById('stopwatch-usd-val');
+        const usdRateInputEl = document.getElementById('usd-rate-input');
+
+        // Helpers
+        function getMonthsElapsed(startDate, endDate) {
+            if (endDate < startDate) return 0;
+            let months = (endDate.getUTCFullYear() - startDate.getUTCFullYear()) * 12 + (endDate.getUTCMonth() - startDate.getUTCMonth());
+            if (endDate.getUTCDate() < startDate.getUTCDate()) {
+                months--;
+            }
+            return Math.max(0, months);
+        }
+
+        // Core Mathematical stopwatch accrual formula
+        function calculateWithdrawalInterest(w, now) {
+            if (now < w.disbursalDate) return 0;
+            
+            let accrued = 0;
+            
+            // Loop through rate periods
+            for (let r of w.rates) {
+                if (now < r.start) continue;
+                
+                let start = r.start;
+                let end = r.end === null || now < r.end ? now : r.end;
+                
+                let durationMs = end.getTime() - start.getTime();
+                let yearFraction = durationMs / MILLISECONDS_IN_YEAR;
+                accrued += w.principal * r.rate * yearFraction;
+            }
+            
+            return accrued;
+        }
+
+        function getActiveRate(w, now) {
+            for (let r of w.rates) {
+                if (now >= r.start && (r.end === null || now < r.end)) {
+                    return (r.rate * 100).toFixed(2) + "%";
+                }
+            }
+            return "0.00%";
+        }
+
+        // Live Ticker State Updates
+        function updateStopwatch() {
+            const now = new Date();
+            
+            let totalAccrued = 0;
+            let totalPmiPaid = 0;
+
+            WITHDRAWALS.forEach(w => {
+                const interest = calculateWithdrawalInterest(w, now);
+                const months = getMonthsElapsed(w.disbursalDate, now);
+                const pmiPaid = months * w.pmi;
+                
+                // Owing interest is accrued interest minus standard monthly PMI payments
+                const owing = Math.max(0, interest - pmiPaid);
+                
+                // Update small cards
+                owingValEls[w.id].textContent = "₹" + owing.toLocaleString('en-IN', { minimumFractionDigits: 5, maximumFractionDigits: 5 });
+                rateValEls[w.id].textContent = getActiveRate(w, now);
+                
+                totalAccrued += interest;
+                totalPmiPaid += pmiPaid;
+            });
+
+            // Summary math
+            const totalOwingINR = Math.max(0, totalAccrued - totalPmiPaid - TOTAL_MANUAL_INTEREST_PAID);
+            
+            const usdRate = parseFloat(usdRateInputEl.value) || 83.50;
+            const totalOwingUSD = totalOwingINR / usdRate;
+
+            // Render live totals down to the millisecond
+            stopwatchInrEl.textContent = "₹" + totalOwingINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            stopwatchUsdEl.textContent = "$" + totalOwingUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            requestAnimationFrame(updateStopwatch);
+        }
+
+        // Start Ticker Loop
+        requestAnimationFrame(updateStopwatch);
+
+        // --- Embedded browser unit test runner ---
+        function runBrowserTests() {
+            const results = [];
+            let allPassed = true;
+
+            function assert(name, condition, details) {
+                results.push({ name, passed: condition, details });
+                if (!condition) allPassed = false;
+            }
+
+            // Test 1: getMonthsElapsed correctness
+            const t1Start = new Date("2024-06-07T00:00:00Z");
+            const t1End = new Date("2024-07-07T00:00:00Z");
+            assert("Month diff: June 7 to July 7", getMonthsElapsed(t1Start, t1End) === 1, `Got ${getMonthsElapsed(t1Start, t1End)}, Expected 1`);
+            
+            const t2End = new Date("2024-07-06T23:59:59Z");
+            assert("Month diff boundary check: June 7 to July 6", getMonthsElapsed(t1Start, t2End) === 0, `Got ${getMonthsElapsed(t1Start, t2End)}, Expected 0`);
+
+            // Test 2: Withdrawal 1 base interest calculation at first rate boundary (12%)
+            const w1 = WITHDRAWALS[0];
+            const testDateMidWay = new Date(w1.disbursalDate.getTime() + (100 * 24 * 60 * 60 * 1000)); // exactly 100 days
+            const expectedW1Interest = w1.principal * 0.12 * (100 * 24 * 60 * 60 * 1000 / MILLISECONDS_IN_YEAR);
+            const actualW1Interest = calculateWithdrawalInterest(w1, testDateMidWay);
+            assert("W1 Interest accrual 100 days (12% Phase)", Math.abs(actualW1Interest - expectedW1Interest) < 1e-5, `Got ₹${actualW1Interest.toFixed(5)}, Expected ₹${expectedW1Interest.toFixed(5)}`);
+
+            // Test 3: Withdrawal 1 calculation inside second phase (12.2% step-up)
+            // Oct 31, 2024 boundary represents exactly 147 days at 12%
+            const testDateInPhase2 = new Date("2024-12-01T00:00:00Z"); // 30 days into phase 2 (12.2%)
+            const expectedW1InterestP2 = (w1.principal * 0.12 * (147 / 365)) + (w1.principal * 0.122 * (30 / 365));
+            const actualW1InterestP2 = calculateWithdrawalInterest(w1, testDateInPhase2);
+            assert("W1 step-up rate 12.2% verification", Math.abs(actualW1InterestP2 - expectedW1InterestP2) < 1e-3, `Got ₹${actualW1InterestP2.toFixed(5)}, Expected ₹${expectedW1InterestP2.toFixed(5)}`);
+
+            // Test 4: Withdrawal 3 static rate calculation
+            const w3 = WITHDRAWALS[2];
+            const testDateW3 = new Date(w3.disbursalDate.getTime() + (50 * 24 * 60 * 60 * 1000)); // 50 days
+            const expectedW3Interest = w3.principal * 0.12 * (50 * 24 * 60 * 60 * 1000 / MILLISECONDS_IN_YEAR);
+            const actualW3Interest = calculateWithdrawalInterest(w3, testDateW3);
+            assert("W3 static 12.0% calculation", Math.abs(actualW3Interest - expectedW3Interest) < 1e-5, `Got ₹${actualW3Interest.toFixed(5)}, Expected ₹${expectedW3Interest.toFixed(5)}`);
+
+            // Render output to Drawer DOM
+            const bodyEl = document.getElementById('test-body-el');
+            bodyEl.innerHTML = '';
+            
+            results.forEach(r => {
+                const row = document.createElement('div');
+                row.className = 'test-row';
+                row.innerHTML = `
+                    <span class="test-name">${r.name} (${r.details})</span>
+                    <span class="test-status ${r.passed ? 'pass' : 'fail'}">${r.passed ? 'PASS' : 'FAIL'}</span>
+                `;
+                bodyEl.appendChild(row);
+            });
+
+            const summaryEl = document.getElementById('test-summary-badge-el');
+            if (allPassed) {
+                summaryEl.textContent = "ALL TESTS PASSED";
+                summaryEl.className = "test-summary-badge all-pass";
+            } else {
+                summaryEl.textContent = "TEST FAILS ENCOUNTERED";
+                summaryEl.className = "test-summary-badge fail";
+            }
+        }
+
+        // Toggle test suite drawer display
+        function toggleTestView() {
+            const el = document.getElementById('test-drawer-el');
+            if (el.style.display === 'block') {
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'block';
+                runBrowserTests();
+            }
+        }
+
+        // Run automatically if ?test=true in query parameters
+        if (window.location.search.includes('test=true')) {
+            document.getElementById('test-drawer-el').style.display = 'block';
+            runBrowserTests();
+        }
+    </script>
+</body>
+</html>

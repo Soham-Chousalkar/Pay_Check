@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loan stopwatch - Credila tracker</title>
+    <title>Loan Stopwatch - Credila Tracker</title>
     <!-- Google Fonts for premium typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -16,6 +16,7 @@
             --card-border: rgba(255, 255, 255, 0.08);
             --text-primary: #ffffff;
             --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
             --accent-red: #ef4444;
             --accent-red-glow: rgba(239, 68, 68, 0.25);
             --text-black: #111827;
@@ -69,7 +70,7 @@
 
         @media (min-width: 900px) {
             .container {
-                grid-template-columns: 4fr 6fr;
+                grid-template-columns: 5fr 7fr;
             }
         }
 
@@ -119,13 +120,13 @@
         }
 
         .withdrawal-card {
-            padding: 1.25rem 1.5rem;
+            padding: 1.5rem;
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 16px;
+            border-radius: 18px;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 0.75rem;
             transition: all 0.3s ease;
         }
 
@@ -134,38 +135,63 @@
             border-color: rgba(255, 255, 255, 0.08);
         }
 
-        /* Strict Raw Data Styling (No labels allowed) */
+        /* Professional Label Typography */
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .field-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        /* Core Values & Industry Standars */
         .raw-principal {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
             color: var(--text-primary);
         }
 
-        .raw-date {
-            font-size: 0.85rem;
-            font-weight: 400;
+        .raw-date, .raw-rate {
+            font-size: 0.9rem;
+            font-weight: 500;
             color: var(--text-secondary);
         }
 
-        .raw-rate {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-secondary);
+        /* Outstanding Hero Balance Layout */
+        .owing-container {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .raw-owing {
-            font-size: 1.25rem;
-            font-weight: 700;
+            font-size: 1.5rem;
+            font-weight: 800;
             color: var(--accent-red);
             font-family: 'Ubuntu Mono', monospace;
-            letter-spacing: -0.01em;
-            text-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+            letter-spacing: -0.02em;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.1);
+        }
+
+        .raw-diff {
+            font-size: 0.9rem; /* Exactly ~1/6th scale visually */
+            font-weight: 600;
+            color: var(--accent-red);
+            opacity: 0.75;
+            font-family: 'Ubuntu Mono', monospace;
         }
 
         /* Summary Ticker Layout (Right column) */
         .summary-card {
-            min-height: 400px;
+            min-height: 450px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -192,12 +218,25 @@
         .ticker-container {
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 2rem;
             margin: auto 0;
-            padding: 2rem 0;
+            padding: 2.5rem 0;
         }
 
-        /* Stopwatch millisecond fonts and animations */
+        .ticker-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .stopwatch-inr-container, .stopwatch-usd-container {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* Live Stopwatch Tickers */
         .stopwatch-inr {
             font-size: 3.5rem;
             font-weight: 900;
@@ -206,20 +245,37 @@
             letter-spacing: -0.04em;
             line-height: 1;
             text-shadow: 0 0 30px var(--accent-red-glow);
-            word-break: break-all;
+        }
+
+        .stopwatch-inr-diff {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-red);
+            font-family: 'Ubuntu Mono', monospace;
+            opacity: 0.75;
+            text-shadow: 0 0 15px var(--accent-red-glow);
         }
 
         .stopwatch-usd {
-            font-size: 2rem;
+            font-size: 2.25rem;
             font-weight: 700;
             color: var(--accent-red);
             font-family: 'Ubuntu Mono', monospace;
             letter-spacing: -0.03em;
-            opacity: 0.85;
+            line-height: 1;
             text-shadow: 0 0 20px var(--accent-red-glow);
         }
 
-        /* Rate Configuration Input (Simplistic) */
+        .stopwatch-usd-diff {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--accent-red);
+            font-family: 'Ubuntu Mono', monospace;
+            opacity: 0.75;
+            text-shadow: 0 0 10px var(--accent-red-glow);
+        }
+
+        /* Custom Conversion Variable Settings */
         .config-panel {
             margin-top: 1rem;
             background: rgba(255, 255, 255, 0.02);
@@ -365,31 +421,88 @@
 
     <div class="container">
         
-        <!-- Left Column: 3 Stacked Cards (Strict raw-data) -->
+        <!-- Left Column: 3 Stacked Cards -->
         <div class="column-left">
             
             <!-- Withdrawal Card 1 -->
             <div class="card withdrawal-card" id="withdrawal-1">
-                <div class="raw-principal">₹1,625,368.00</div>
-                <div class="raw-date">2024-06-07</div>
-                <div class="raw-rate" id="rate-val-1">12.00%</div>
-                <div class="raw-owing" id="owing-val-1">₹0.00</div>
+                <div class="field-group">
+                    <span class="field-label">Disbursed Principal</span>
+                    <div class="raw-principal">₹1,625,368.00</div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <div class="field-group">
+                        <span class="field-label">Disbursal Date</span>
+                        <div class="raw-date">2024-06-07</div>
+                    </div>
+                    <div class="field-group" style="text-align: right;">
+                        <span class="field-label">Interest Rate</span>
+                        <div class="raw-rate" id="rate-val-1">12.00%</div>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <span class="field-label">Outstanding Balance (With Accrued Interest)</span>
+                    <div class="owing-container">
+                        <span class="raw-owing" id="owing-val-1">₹0.00</span>
+                        <span class="raw-diff" id="diff-val-1">(+₹0.00)</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Withdrawal Card 2 -->
             <div class="card withdrawal-card" id="withdrawal-2">
-                <div class="raw-principal">₹900,000.00</div>
-                <div class="raw-date">2025-01-16</div>
-                <div class="raw-rate" id="rate-val-2">12.00%</div>
-                <div class="raw-owing" id="owing-val-2">₹0.00</div>
+                <div class="field-group">
+                    <span class="field-label">Disbursed Principal</span>
+                    <div class="raw-principal">₹900,000.00</div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <div class="field-group">
+                        <span class="field-label">Disbursal Date</span>
+                        <div class="raw-date">2025-01-16</div>
+                    </div>
+                    <div class="field-group" style="text-align: right;">
+                        <span class="field-label">Interest Rate</span>
+                        <div class="raw-rate" id="rate-val-2">12.00%</div>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <span class="field-label">Outstanding Balance (With Accrued Interest)</span>
+                    <div class="owing-container">
+                        <span class="raw-owing" id="owing-val-2">₹0.00</span>
+                        <span class="raw-diff" id="diff-val-2">(+₹0.00)</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Withdrawal Card 3 -->
             <div class="card withdrawal-card" id="withdrawal-3">
-                <div class="raw-principal">₹900,000.00</div>
-                <div class="raw-date">2025-07-19</div>
-                <div class="raw-rate" id="rate-val-3">12.00%</div>
-                <div class="raw-owing" id="owing-val-3">₹0.00</div>
+                <div class="field-group">
+                    <span class="field-label">Disbursed Principal</span>
+                    <div class="raw-principal">₹900,000.00</div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; gap: 1rem;">
+                    <div class="field-group">
+                        <span class="field-label">Disbursal Date</span>
+                        <div class="raw-date">2025-07-19</div>
+                    </div>
+                    <div class="field-group" style="text-align: right;">
+                        <span class="field-label">Interest Rate</span>
+                        <div class="raw-rate" id="rate-val-3">12.00%</div>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <span class="field-label">Outstanding Balance (With Accrued Interest)</span>
+                    <div class="owing-container">
+                        <span class="raw-owing" id="owing-val-3">₹0.00</span>
+                        <span class="raw-diff" id="diff-val-3">(+₹0.00)</span>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -398,13 +511,28 @@
         <div class="card summary-card">
             
             <div class="total-disbursed-container">
+                <span class="field-label">Total Principal Disbursed</span>
                 <div class="total-disbursed-value">₹3,425,370.00</div>
             </div>
 
             <div class="ticker-container">
-                <!-- Ticks continuously to 2 decimal places -->
-                <div class="stopwatch-inr" id="stopwatch-inr-val">₹0.00</div>
-                <div class="stopwatch-usd" id="stopwatch-usd-val">$0.00</div>
+                
+                <div class="ticker-group">
+                    <span class="field-label">Total Outstanding Balance (INR)</span>
+                    <div class="stopwatch-inr-container">
+                        <div class="stopwatch-inr" id="stopwatch-inr-val">₹0.00</div>
+                        <div class="stopwatch-inr-diff" id="stopwatch-inr-diff-val">+₹0.00</div>
+                    </div>
+                </div>
+
+                <div class="ticker-group">
+                    <span class="field-label">Total Outstanding Balance (USD)</span>
+                    <div class="stopwatch-usd-container">
+                        <div class="stopwatch-usd" id="stopwatch-usd-val">$0.00</div>
+                        <div class="stopwatch-usd-diff" id="stopwatch-usd-diff-val">+$0.00</div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Custom Conversion Variable Settings -->
@@ -429,7 +557,7 @@
     </div>
 
     <div class="footer">
-        Strict Simple stopwatch Engine &bull; <a onclick="toggleTestView()">Toggle Test Suite Panel</a>
+        Strict Simple Stopwatch Engine &bull; <a onclick="toggleTestView()">Toggle Test Suite Panel</a>
     </div>
 
     <script>
@@ -442,7 +570,6 @@
                 principal: 1625368.00,
                 disbursalDate: new Date("2024-06-07T00:00:00Z"),
                 pmi: 1505,
-                // Step-up Rate intervals
                 rates: [
                     { start: new Date("2024-06-07T00:00:00Z"), end: new Date("2024-11-01T00:00:00Z"), rate: 0.12 },
                     { start: new Date("2024-11-01T00:00:00Z"), end: new Date("2025-08-01T00:00:00Z"), rate: 0.122 },
@@ -472,6 +599,7 @@
 
         // Total manual prepayments / payments recovered by bank up to 31-12-2025
         const TOTAL_MANUAL_INTEREST_PAID = 41923;
+        const TOTAL_PRINCIPAL_DISBURSED = 3425368.00; // Exact mathematical sum of your 3 withdrawals
 
         // Dom Elements Cache
         const owingValEls = {
@@ -479,13 +607,20 @@
             2: document.getElementById('owing-val-2'),
             3: document.getElementById('owing-val-3')
         };
+        const diffValEls = {
+            1: document.getElementById('diff-val-1'),
+            2: document.getElementById('diff-val-2'),
+            3: document.getElementById('diff-val-3')
+        };
         const rateValEls = {
             1: document.getElementById('rate-val-1'),
             2: document.getElementById('rate-val-2'),
             3: document.getElementById('rate-val-3')
         };
         const stopwatchInrEl = document.getElementById('stopwatch-inr-val');
+        const stopwatchInrDiffEl = document.getElementById('stopwatch-inr-diff-val');
         const stopwatchUsdEl = document.getElementById('stopwatch-usd-val');
+        const stopwatchUsdDiffEl = document.getElementById('stopwatch-usd-diff-val');
         const usdRateInputEl = document.getElementById('usd-rate-input');
 
         // Helpers
@@ -504,7 +639,6 @@
             
             let accrued = 0;
             
-            // Loop through rate periods
             for (let r of w.rates) {
                 if (now < r.start) continue;
                 
@@ -541,10 +675,14 @@
                 const pmiPaid = months * w.pmi;
                 
                 // Owing interest is accrued interest minus standard monthly PMI payments
-                const owing = Math.max(0, interest - pmiPaid);
+                const owingDiff = Math.max(0, interest - pmiPaid);
                 
-                // Update small cards
-                owingValEls[w.id].textContent = "₹" + owing.toLocaleString('en-IN', { minimumFractionDigits: 5, maximumFractionDigits: 5 });
+                // Total outstanding balance is original principal + net owing accrued interest
+                const totalOwing = w.principal + owingDiff;
+                
+                // Update small cards with professional visual hierarchy
+                owingValEls[w.id].textContent = "₹" + totalOwing.toLocaleString('en-IN', { minimumFractionDigits: 5, maximumFractionDigits: 5 });
+                diffValEls[w.id].textContent = "(+₹" + owingDiff.toLocaleString('en-IN', { minimumFractionDigits: 5, maximumFractionDigits: 5 }) + ")";
                 rateValEls[w.id].textContent = getActiveRate(w, now);
                 
                 totalAccrued += interest;
@@ -552,14 +690,19 @@
             });
 
             // Summary math
-            const totalOwingINR = Math.max(0, totalAccrued - totalPmiPaid - TOTAL_MANUAL_INTEREST_PAID);
+            const totalOwingInterestINR = Math.max(0, totalAccrued - totalPmiPaid - TOTAL_MANUAL_INTEREST_PAID);
+            const totalOutstandingINR = TOTAL_PRINCIPAL_DISBURSED + totalOwingInterestINR;
             
             const usdRate = parseFloat(usdRateInputEl.value) || 83.50;
-            const totalOwingUSD = totalOwingINR / usdRate;
+            const totalOutstandingUSD = totalOutstandingINR / usdRate;
+            const totalOwingInterestUSD = totalOwingInterestINR / usdRate;
 
-            // Render live totals down to the millisecond
-            stopwatchInrEl.textContent = "₹" + totalOwingINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            stopwatchUsdEl.textContent = "$" + totalOwingUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            // Render live totals down to the millisecond in a premium dashboard layout
+            stopwatchInrEl.textContent = "₹" + totalOutstandingINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            stopwatchInrDiffEl.textContent = "+₹" + totalOwingInterestINR.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            stopwatchUsdEl.textContent = "$" + totalOutstandingUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            stopwatchUsdDiffEl.textContent = "+$" + totalOwingInterestUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             requestAnimationFrame(updateStopwatch);
         }
@@ -593,7 +736,6 @@
             assert("W1 Interest accrual 100 days (12% Phase)", Math.abs(actualW1Interest - expectedW1Interest) < 1e-5, `Got ₹${actualW1Interest.toFixed(5)}, Expected ₹${expectedW1Interest.toFixed(5)}`);
 
             // Test 3: Withdrawal 1 calculation inside second phase (12.2% step-up)
-            // Oct 31, 2024 boundary represents exactly 147 days at 12%
             const testDateInPhase2 = new Date("2024-12-01T00:00:00Z"); // 30 days into phase 2 (12.2%)
             const expectedW1InterestP2 = (w1.principal * 0.12 * (147 / 365)) + (w1.principal * 0.122 * (30 / 365));
             const actualW1InterestP2 = calculateWithdrawalInterest(w1, testDateInPhase2);

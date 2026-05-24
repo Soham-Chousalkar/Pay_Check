@@ -62,3 +62,4 @@ Provide an ultra-simplistic, raw-data, real-time live ticker calculating the acc
 - Embedded browser unit test suite inside `index.html`.
 - Accessible via query string parameter `?test=true` or a footer toggle.
 - Must run in any browser to verify correctness after every code adjustment.
+

@@ -1,0 +1,1594 @@
+[
+  {
+    "id": "tx_imported_1738904400000_1",
+    "date": "2025-02-07",
+    "type": "credit_card_bill",
+    "category": "Credit Card Bill Clear",
+    "description": "[Discover] INTERNET PAYMENT - THANK YOU",
+    "amount": 16316.74
+  },
+  {
+    "id": "tx_imported_1738904400000_2",
+    "date": "2025-02-07",
+    "type": "credit_card_bill",
+    "category": "Credit Card Bill Clear",
+    "description": "[Discover] CASHBACK BONUS REDEMPTION PYMT/STMT CRDT",
+    "amount": 294.75
+  },
+  {
+    "id": "tx_imported_1739336400000_3",
+    "date": "2025-02-12",
+    "type": "credit_card_bill",
+    "category": "Credit Card Bill Clear",
+    "description": "[Discover] INTERNET PAYMENT - THANK YOU",
+    "amount": 993.65
+  },
+  {
+    "id": "tx_imported_1739509200000_4",
+    "date": "2025-02-14",
+    "type": "credit_card_bill",
+    "category": "Credit Card Bill Clear",
+    "description": "[Discover] TRADER JOE S #673 KETTERING OH",
+    "amount": 3340.0
+  },
+  {
+    "id": "tx_imported_1741237200000_5",
+    "date": "2025-03-06",
+    "type": "credit_card_bill",
+    "category": "Credit Card Bill Clear",
+    "description": "[Discover] INTERNET PAYMENT - THANK YOU",
+    "amount": 20384.02
+  },
+  {
+    "id": "tx_imported_1738818000000_6",
+    "date": "2025-02-06",
+    "type": "credit_card_purchase",
+    "category": "Other Expense",
+    "description": "[Discover] CTLP*SHEEHAN BROTHERS SPRINGFIELD OH Restaurants",
+    "amount": 158.65
+  },
+  {
+    "id": "tx_imported_1739077200000_7",
+    "date": "2025-02-09",
+    "type": "credit_card_purchase",
+    "category": "Transit & Travel",
+    "description": "[Discover] MASABI GDRTA 937-425-8300 OH Travel/Entertainment",
+    "amount": 835.0
+  },
+  {
+    "id": "tx_imported_1739422800000_8",
+    "date": "2025-02-13",
+    "type": "credit_card_purchase",
+    "category": "Food & Groceries",
+    "description": "[Discover] UD DINING SERVICES DAYTON OH Education",
+    "amount": 1156.47
+  },
+  {
+    "id": "tx_imported_1739509200000_9",
+    "date": "2025-02-14",
+    "type": "credit_card_purchase",
+    "category": "Shopping",
+    "description": "[Discover] WALGREENS #4639 KETTERING OH Merchandise",
+    "amount": 2420.66
+  },
+  {
+    "id": "tx_imported_1739509200000_10",
+    "date": "2025-02-14",
+    "type": "credit_card_purchase",
+    "category": "Shopping",
+    "description": "[Discover] T.J. MAXX #1429 KETTERING OH Merchandise",
+    "amount": 896.79
+  },
+  {
+    "id": "tx_imported_1739509200000_11",
+    "date": "2025-02-14",
+    "type": "credit_card_purchase",
+    "category": "Other Expense",
+    "description": "[Discover] TRADER JOE S #673 KETTERING OH Supermarkets",
+    "amount": 3787.56
+  },
+  {
+    "id": "tx_imported_1739509200000_12",
+    "date": "2025-02-14",
+    "type": "credit_card_purchase",
+    "category": "Other Expense",
+    "description": "[Discover] TRADER JOE S #673 KETTERING OH Supermarkets",
+    "amount": 2233.62
+  },
+  {
+    "id": "tx_imported_1739854800000_13",
+    "date": "2025-02-18",
+    "type": "credit_card_purchase",
+    "category": "Transit & Travel",
+    "description": "[Discover] MASABI GDRTA 937-425-8300 OH Travel/Entertainment",
+    "amount": 835.0
+  },
+  {
+    "id": "tx_imported_1739854800000_14",
+    "date": "2025-02-18",
+    "type": "credit_card_purchase",
+    "category": "Other Expense",
+    "description": "[Discover] FLYER ENTERPRISES DAYTON OH Education",
+    "amount": 1123.08
+  },
+  {
+    "id": "tx_imported_1739854800000_15",
+    "date": "2025-02-18",
+    "type": "credit_card_purchase",
+    "category": "Food & Groceries",
+    "description": "[Discover] UD DINING SERVICES DAYTON OH Education",
+    "amount": 759.85
+  },
+  {
+    "id": "tx_imported_1740027600000_16",
+    "date": "2025-02-20",
+    "type": "credit_card_purchase",
+    "category": "Other Expense",
+    "description": "[Discover] TMOBILE*PREPAID WEB 877-778-2106 WA Services",
+    "amount": 1352.7
+  },
+  {
+    "id": "tx_imported_1740027600000_17",
+    "date": "2025-02-20",
+    "type": "credit_card_purchase",
+    "category": "Food & Groceries",
+    "description": "[Discover] UD DINING SERVICES DAYTON OH Education",
+    "amount": 759.85
+  },
+  {
+    "id": "tx_imported_1740114000000_18",
+    "date": "2025-02-21",
+    "type": "credit_card_purchase",
+    "category": "Food & Groceries",
+    "description": "[Discover] UD DINING SERVICES DAYTON OH Education",
+    "amount": 796.59
+  },
+  {
+    "id": "tx_imported_1740286800000_19",
+    "date": "2025-02-23",
+    "type": "credit_card_purchase",
+    "category": "Shopping",
+    "description": "[Discover] WALMART.COM 8009256278 BENTONVILLE Merchandise",
+    "amount": 2900.79
+  },
+  {
+    "id": "tx_imported_1740373200000_20",
+    "date": "2025-02-24",
+    "type": "credit_card_purchase",
+    "category": "Transit & Travel",
+    "description": "[Discover] MASABI GDRTA 937-425-8300 OH Travel/Entertainment",
+    "amount": 835.0
+  },
+  {
+    "id": "tx_imported_1740459600000_21",
+    "date": "2025-02-25",
+    "type": "credit_card_purchase",
+    "category": "Food & Groceries",
+    "description": "[Discover] UD DINING SERVICES DAYTON OH Education",
+    "amount": 738.98
+  },
+  {
+    "id": "tx_imported_1740546000000_22",
+    "date": "2025-02-26",
+    "type": "credit_card_purchase",
+    "category": "Food & Groceries",
+    "description": "[Discover] PAYPAL *UBER EATS 888-221-1161 CA Restaurants",
+    "amount": 2500.82
+  },
+  {
+    "id": "tx_imported_1740978000000_23",
+    "date": "2025-03-03",
+    "type": "credit_card_purchase",
+    "category": "Food & Groceries",
+    "description": "[Discover] UD DINING SERVICES DAYTON OH Education",
+    "amount": 626.25
+  },
+  {
+    "id": "tx_imported_1741150800000_24",
+    "date": "2025-03-05",
+    "type": "credit_card_purchase",
+    "category": "Shopping",
+    "description": "[Discover] AMZ*QXUTI900X EMPO JWO DAYTON OH Merchandise",
+    "amount": 626.25
+  },
+  {
+    "id": "tx_imported_1742875200000_25",
+    "date": "2025-03-25",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99B2Jew3P",
+    "amount": 5965.24
+  },
+  {
+    "id": "tx_imported_1743048000000_26",
+    "date": "2025-03-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Neeraj Akhnoor Jpm99B2Ocrgm",
+    "amount": 22510.76
+  },
+  {
+    "id": "tx_imported_1743048000000_27",
+    "date": "2025-03-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Neeraj Akhnoor Jpm99B2Ogfu0",
+    "amount": 501.0
+  },
+  {
+    "id": "tx_imported_1743134400000_28",
+    "date": "2025-03-28",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 42122.41
+  },
+  {
+    "id": "tx_imported_1743393600000_29",
+    "date": "2025-03-31",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Mahitha Kalaga 24223194235",
+    "amount": 826.65
+  },
+  {
+    "id": "tx_imported_1743480000000_30",
+    "date": "2025-04-01",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sai Thommandru Jpm99B3Bvio4",
+    "amount": 668.0
+  },
+  {
+    "id": "tx_imported_1743652800000_31",
+    "date": "2025-04-03",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Yuvaraj Naval 24290257874",
+    "amount": 8350.0
+  },
+  {
+    "id": "tx_imported_1744344000000_32",
+    "date": "2025-04-11",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 33430.06
+  },
+  {
+    "id": "tx_imported_1744948800000_33",
+    "date": "2025-04-18",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99B5B8Obj",
+    "amount": 2629.41
+  },
+  {
+    "id": "tx_imported_1745208000000_34",
+    "date": "2025-04-21",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Anvitha Battineni 24476500220",
+    "amount": 668.0
+  },
+  {
+    "id": "tx_imported_1745208000000_35",
+    "date": "2025-04-21",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Anvita 24474641984",
+    "amount": 2171.0
+  },
+  {
+    "id": "tx_imported_1723003200000_36",
+    "date": "2024-08-07",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Deposit 2099278968",
+    "amount": 41750.0
+  },
+  {
+    "id": "tx_imported_1723089600000_37",
+    "date": "2024-08-08",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Akhil Deshpande 21668110821",
+    "amount": 1252.5
+  },
+  {
+    "id": "tx_imported_1723089600000_38",
+    "date": "2024-08-08",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Akhil Deshpande 21667233896",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_39",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 21667226552",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_40",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Nitin Ud 21667212889",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_41",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sarath Dayton 21667224101",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_42",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sushanth Dayton 21667241001",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_43",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Charan Dayton 21667247358",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_44",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Shivakumar08300 21667284207",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_45",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Surya Dayton 21667314389",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723089600000_46",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 21667399996",
+    "amount": 584.5
+  },
+  {
+    "id": "tx_imported_1723089600000_47",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 21667425177",
+    "amount": 417.5
+  },
+  {
+    "id": "tx_imported_1723089600000_48",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 21667418922",
+    "amount": 250.5
+  },
+  {
+    "id": "tx_imported_1723089600000_49",
+    "date": "2024-08-08",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Anusha Deshpande 21667427637",
+    "amount": 250.5
+  },
+  {
+    "id": "tx_imported_1723176000000_50",
+    "date": "2024-08-09",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Akhil Deshpande 21670136633",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723176000000_51",
+    "date": "2024-08-09",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Charan Pagolu 21680248407",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723176000000_52",
+    "date": "2024-08-09",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 21670082961",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1723435200000_53",
+    "date": "2024-08-12",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Book Transfer Credit B/O: Idfc First Bank Limited Chennai India 60003-1 IN",
+    "amount": 242696.93
+  },
+  {
+    "id": "tx_imported_1723435200000_54",
+    "date": "2024-08-12",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Akhil Deshpande 21707179463",
+    "amount": 41750.0
+  },
+  {
+    "id": "tx_imported_1723435200000_55",
+    "date": "2024-08-12",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 21706400610",
+    "amount": 89762.5
+  },
+  {
+    "id": "tx_imported_1723435200000_56",
+    "date": "2024-08-12",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 08/12 United Dairy Fa Dayton OH Card 3347",
+    "amount": 500.17
+  },
+  {
+    "id": "tx_imported_1723435200000_57",
+    "date": "2024-08-12",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 08/12 Dollar Tr 5522 Springb Dayton OH Card",
+    "amount": 785.74
+  },
+  {
+    "id": "tx_imported_1723435200000_58",
+    "date": "2024-08-12",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] International Incoming Wire Fee",
+    "amount": 1252.5
+  },
+  {
+    "id": "tx_imported_1723521600000_59",
+    "date": "2024-08-13",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Akhil Deshpande 21710376137",
+    "amount": 41750.0
+  },
+  {
+    "id": "tx_imported_1723608000000_60",
+    "date": "2024-08-14",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Akhil Deshpande 21722790036",
+    "amount": 6262.5
+  },
+  {
+    "id": "tx_imported_1723608000000_61",
+    "date": "2024-08-14",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Upendra 21726898862",
+    "amount": 417.5
+  },
+  {
+    "id": "tx_imported_1723694400000_62",
+    "date": "2024-08-15",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 08/15 Dollartre 1905 Wayne New Lexington OH",
+    "amount": 1009.51
+  },
+  {
+    "id": "tx_imported_1724126400000_63",
+    "date": "2024-08-20",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] $100 For New Checking",
+    "amount": 8350.0
+  },
+  {
+    "id": "tx_imported_1732510800000_64",
+    "date": "2024-11-25",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Tirth Maheshkumar Vaghela 22817451489",
+    "amount": 3844.34
+  },
+  {
+    "id": "tx_imported_1732510800000_65",
+    "date": "2024-11-25",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 11/23 Wm Superc Wal-Mart Sup Moraine OH Card",
+    "amount": 1207.41
+  },
+  {
+    "id": "tx_imported_1732510800000_66",
+    "date": "2024-11-25",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 11/23 Wal-Mart #5104 Moraine OH Card 3347",
+    "amount": 320.64
+  },
+  {
+    "id": "tx_imported_1732597200000_67",
+    "date": "2024-11-26",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Jayanth Dayton 22848649112",
+    "amount": 1753.5
+  },
+  {
+    "id": "tx_imported_1734325200000_68",
+    "date": "2024-12-16",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To 9378090445 Jpm99Aswi16J",
+    "amount": 835.0
+  },
+  {
+    "id": "tx_imported_1734325200000_69",
+    "date": "2024-12-16",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To 9376039528 23053148552",
+    "amount": 584.5
+  },
+  {
+    "id": "tx_imported_1734670800000_70",
+    "date": "2024-12-20",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 4373.73
+  },
+  {
+    "id": "tx_imported_1737694800000_71",
+    "date": "2025-01-24",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Krishna US 23495959834",
+    "amount": 8350.0
+  },
+  {
+    "id": "tx_imported_1737694800000_72",
+    "date": "2025-01-24",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To +1(937)304-5809 23495990083",
+    "amount": 22545.0
+  },
+  {
+    "id": "tx_imported_1737954000000_73",
+    "date": "2025-01-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Neeraj Akhnoor Dayton 23515285999",
+    "amount": 16700.0
+  },
+  {
+    "id": "tx_imported_1738213200000_74",
+    "date": "2025-01-30",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Mahitha Kalaga 23552859671",
+    "amount": 2187.7
+  },
+  {
+    "id": "tx_imported_1738213200000_75",
+    "date": "2025-01-30",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99Awgzep0",
+    "amount": 2187.7
+  },
+  {
+    "id": "tx_imported_1738299600000_76",
+    "date": "2025-01-31",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Naveen Chukka Ftb098057596",
+    "amount": 20875.0
+  },
+  {
+    "id": "tx_imported_1738299600000_77",
+    "date": "2025-01-31",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Bharadwaj Penumarthi 23567186891",
+    "amount": 8350.0
+  },
+  {
+    "id": "tx_imported_1738299600000_78",
+    "date": "2025-01-31",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Bharadwaj Penumarthi 23569881237",
+    "amount": 1670.0
+  },
+  {
+    "id": "tx_imported_1738558800000_79",
+    "date": "2025-02-03",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To +1(937)304-5809 23594023399",
+    "amount": 22545.0
+  },
+  {
+    "id": "tx_imported_1738645200000_80",
+    "date": "2025-02-04",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Mahitha Kalaga 23620491513",
+    "amount": 103456.5
+  },
+  {
+    "id": "tx_imported_1738645200000_81",
+    "date": "2025-02-04",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Mahitha Kalaga 23620598163",
+    "amount": 103456.5
+  },
+  {
+    "id": "tx_imported_1738731600000_82",
+    "date": "2025-02-05",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99Ax4Bomr",
+    "amount": 8350.0
+  },
+  {
+    "id": "tx_imported_1739422800000_83",
+    "date": "2025-02-13",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Neeraj Akhnoor Ftb099117499",
+    "amount": 16700.0
+  },
+  {
+    "id": "tx_imported_1739422800000_84",
+    "date": "2025-02-13",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To +1(937)304-5809 23712890830",
+    "amount": 417.5
+  },
+  {
+    "id": "tx_imported_1740027600000_85",
+    "date": "2025-02-20",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Bharadwaj Penumarthi 23789912189",
+    "amount": 693.88
+  },
+  {
+    "id": "tx_imported_1766466000000_86",
+    "date": "2025-12-23",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Mahitha Kalaga 23131045056",
+    "amount": 1562.29
+  },
+  {
+    "id": "tx_imported_1766552400000_87",
+    "date": "2025-12-24",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Book Transfer Credit B/O: Indusind Bank Limited Mumbai Mh India 40001-3",
+    "amount": 343778.68
+  },
+  {
+    "id": "tx_imported_1766552400000_88",
+    "date": "2025-12-24",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan 23165920369",
+    "amount": 5008.33
+  },
+  {
+    "id": "tx_imported_1766552400000_89",
+    "date": "2025-12-24",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] International Incoming Wire Fee",
+    "amount": 1252.5
+  },
+  {
+    "id": "tx_imported_1766725200000_90",
+    "date": "2025-12-26",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Naveen Chukka Ftb095266044",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1766725200000_91",
+    "date": "2025-12-26",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Neeraj Akhnoor Dayton 23165943862",
+    "amount": 418.33
+  },
+  {
+    "id": "tx_imported_1766811600000_92",
+    "date": "2025-12-27",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of D Purchase 427035 Web ID: 9120289002",
+    "amount": -198103.75
+  },
+  {
+    "id": "tx_imported_1767070800000_93",
+    "date": "2025-12-30",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Bharadwaj Penumarthi 23209268387",
+    "amount": 835.0
+  },
+  {
+    "id": "tx_imported_1767070800000_94",
+    "date": "2025-12-30",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To +1(937)476-9465 Jpm99Atrs030",
+    "amount": 20875.0
+  },
+  {
+    "id": "tx_imported_1736139600000_95",
+    "date": "2025-01-06",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Tirth Maheshkumar Vaghela 23300650722",
+    "amount": 6513.0
+  },
+  {
+    "id": "tx_imported_1736139600000_96",
+    "date": "2025-01-06",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Jayanth 2024 Dayton 23284344359",
+    "amount": 1085.5
+  },
+  {
+    "id": "tx_imported_1737003600000_97",
+    "date": "2025-01-16",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Bharadwaj Penumarthi 23410719450",
+    "amount": 215.43
+  },
+  {
+    "id": "tx_imported_1737003600000_98",
+    "date": "2025-01-16",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 23409834921",
+    "amount": 4175.0
+  },
+  {
+    "id": "tx_imported_1737003600000_99",
+    "date": "2025-01-16",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99Av3PC5P",
+    "amount": 496.82
+  },
+  {
+    "id": "tx_imported_1737090000000_100",
+    "date": "2025-01-17",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Book Transfer Credit B/O: Indusind Bank Limited Mumbai Mh India 40001-3",
+    "amount": 855490.9
+  },
+  {
+    "id": "tx_imported_1737090000000_101",
+    "date": "2025-01-17",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 14645.9
+  },
+  {
+    "id": "tx_imported_1737090000000_102",
+    "date": "2025-01-17",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] International Incoming Wire Fee",
+    "amount": 1252.5
+  },
+  {
+    "id": "tx_imported_1737435600000_103",
+    "date": "2025-01-21",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Mahitha Kalaga 23436961527",
+    "amount": 4175.0
+  },
+  {
+    "id": "tx_imported_1737435600000_104",
+    "date": "2025-01-21",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Naveen Chukka Ftb097181289",
+    "amount": 477.62
+  },
+  {
+    "id": "tx_imported_1737522000000_105",
+    "date": "2025-01-22",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of D Purchase 430025 Web ID: 9120289002",
+    "amount": -581786.25
+  },
+  {
+    "id": "tx_imported_1747972800000_106",
+    "date": "2025-05-23",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar Ftb107635271",
+    "amount": 41666.5
+  },
+  {
+    "id": "tx_imported_1748318400000_107",
+    "date": "2025-05-27",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar Ftb107992756",
+    "amount": 25634.5
+  },
+  {
+    "id": "tx_imported_1748318400000_108",
+    "date": "2025-05-27",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar 0Pe0Dbq1Rhrc",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1748318400000_109",
+    "date": "2025-05-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Jayanth 2024 Dayton 24885546330",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1748318400000_110",
+    "date": "2025-05-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Soham Chousalkar Jpm99B9Y7Zf6",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1748318400000_111",
+    "date": "2025-05-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Soham Chousalkar Jpm99B9Y9G3I",
+    "amount": 41499.5
+  },
+  {
+    "id": "tx_imported_1748404800000_112",
+    "date": "2025-05-28",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Soham Chousalkar Jpm99B9Zl5Xu",
+    "amount": 41332.5
+  },
+  {
+    "id": "tx_imported_1748491200000_113",
+    "date": "2025-05-29",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] 05/29 Online Transfer 24933268201 To Checking ########9403",
+    "amount": 91850.0
+  },
+  {
+    "id": "tx_imported_1748836800000_114",
+    "date": "2025-06-02",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar 0Pe0Qbe1Jhu3",
+    "amount": 4175.0
+  },
+  {
+    "id": "tx_imported_1748836800000_115",
+    "date": "2025-06-02",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Harshitha Kakanuru 24966790783",
+    "amount": 1670.0
+  },
+  {
+    "id": "tx_imported_1749182400000_116",
+    "date": "2025-06-06",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar 0Pe02Bp1Yhwg",
+    "amount": 4175.0
+  },
+  {
+    "id": "tx_imported_1749528000000_117",
+    "date": "2025-06-10",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar 0Pe0Hb31Ih17",
+    "amount": 4175.0
+  },
+  {
+    "id": "tx_imported_1749614400000_118",
+    "date": "2025-06-11",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar 0Pe0Ybj1Yh2I",
+    "amount": 8350.0
+  },
+  {
+    "id": "tx_imported_1749614400000_119",
+    "date": "2025-06-11",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sai Undrakonda 25093285050",
+    "amount": 5552.75
+  },
+  {
+    "id": "tx_imported_1749787200000_120",
+    "date": "2025-06-13",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Jayanth Dayton 25120616297",
+    "amount": 640.45
+  },
+  {
+    "id": "tx_imported_1750132800000_121",
+    "date": "2025-06-17",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar 0Pe0Cbu13Hfy",
+    "amount": 4175.0
+  },
+  {
+    "id": "tx_imported_1750392000000_122",
+    "date": "2025-06-20",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Charitha Battini 25181065463",
+    "amount": 1670.0
+  },
+  {
+    "id": "tx_imported_1740632400000_123",
+    "date": "2025-02-27",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Bharadwaj Penumarthi 23867804026",
+    "amount": 835.0
+  },
+  {
+    "id": "tx_imported_1740632400000_124",
+    "date": "2025-02-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Krishna US 23867758426",
+    "amount": 1670.0
+  },
+  {
+    "id": "tx_imported_1740632400000_125",
+    "date": "2025-02-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Utkarshraj Bhosale 23867935311",
+    "amount": 1670.0
+  },
+  {
+    "id": "tx_imported_1740632400000_126",
+    "date": "2025-02-27",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Nitin Ud 23869548215",
+    "amount": 25050.0
+  },
+  {
+    "id": "tx_imported_1740718800000_127",
+    "date": "2025-02-28",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 36590.53
+  },
+  {
+    "id": "tx_imported_1740718800000_128",
+    "date": "2025-02-28",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Sohan Eluri 23886110395",
+    "amount": 4742.8
+  },
+  {
+    "id": "tx_imported_1740978000000_129",
+    "date": "2025-03-03",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Anvitha Battineni 23910023345",
+    "amount": 2702.89
+  },
+  {
+    "id": "tx_imported_1740978000000_130",
+    "date": "2025-03-03",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Neeraj Akhnoor Ftb100539954",
+    "amount": 1396.12
+  },
+  {
+    "id": "tx_imported_1741579200000_131",
+    "date": "2025-03-10",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar Ftb101253885",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1741579200000_132",
+    "date": "2025-03-10",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Anvita 24012043601",
+    "amount": 125.25
+  },
+  {
+    "id": "tx_imported_1741924800000_133",
+    "date": "2025-03-14",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 38227.97
+  },
+  {
+    "id": "tx_imported_1742356800000_134",
+    "date": "2025-03-19",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar Ftb102045648",
+    "amount": 1670.0
+  },
+  {
+    "id": "tx_imported_1742356800000_135",
+    "date": "2025-03-19",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Mahitha Kalaga 24112338446",
+    "amount": 2755.5
+  },
+  {
+    "id": "tx_imported_1742529600000_136",
+    "date": "2025-03-21",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Soham Chousalkar Ftb102180301",
+    "amount": 8350.0
+  },
+  {
+    "id": "tx_imported_1745553600000_137",
+    "date": "2025-04-25",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 38102.72
+  },
+  {
+    "id": "tx_imported_1745812800000_138",
+    "date": "2025-04-28",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Penumarthi Ftb105269737",
+    "amount": 20875.0
+  },
+  {
+    "id": "tx_imported_1746072000000_139",
+    "date": "2025-05-01",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99B6Pljb7",
+    "amount": 3846.01
+  },
+  {
+    "id": "tx_imported_1746158400000_140",
+    "date": "2025-05-02",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99B6Zcb4G",
+    "amount": 1670.0
+  },
+  {
+    "id": "tx_imported_1746417600000_141",
+    "date": "2025-05-05",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Sohan Eluri Ftb105934705",
+    "amount": 1693.38
+  },
+  {
+    "id": "tx_imported_1746417600000_142",
+    "date": "2025-05-05",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Jayanth Varun Paturi 24639643424",
+    "amount": 1584.83
+  },
+  {
+    "id": "tx_imported_1746417600000_143",
+    "date": "2025-05-05",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan Echelon Jpm99B7319Op",
+    "amount": 2254.5
+  },
+  {
+    "id": "tx_imported_1746417600000_144",
+    "date": "2025-05-05",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sohan 24634780300",
+    "amount": 2338.0
+  },
+  {
+    "id": "tx_imported_1746417600000_145",
+    "date": "2025-05-05",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Jayanth Dayton 24641278431",
+    "amount": 1583.16
+  },
+  {
+    "id": "tx_imported_1746676800000_146",
+    "date": "2025-05-08",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of D Purchase 438280 Web ID: 9120289002",
+    "amount": -271792.5
+  },
+  {
+    "id": "tx_imported_1746763200000_147",
+    "date": "2025-05-09",
+    "type": "income",
+    "category": "On-Campus Shift",
+    "description": "[Chase Checking] University of Da Payroll PPD ID: 9372551002",
+    "amount": 34024.58
+  },
+  {
+    "id": "tx_imported_1746763200000_148",
+    "date": "2025-05-09",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Neeraj Akhnoor Ftb106474061",
+    "amount": 1435.37
+  },
+  {
+    "id": "tx_imported_1747195200000_149",
+    "date": "2025-05-14",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Tharun Reddy Desireddy 24766748739",
+    "amount": 709.75
+  },
+  {
+    "id": "tx_imported_1747713600000_150",
+    "date": "2025-05-20",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Surya Sandeep Akella 24832250819",
+    "amount": 250.5
+  },
+  {
+    "id": "tx_imported_1747713600000_151",
+    "date": "2025-05-20",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Sohan Eluri 24832377020",
+    "amount": 212.92
+  },
+  {
+    "id": "tx_imported_1747713600000_152",
+    "date": "2025-05-20",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Aravind Morigadi 24837246573",
+    "amount": 212.92
+  },
+  {
+    "id": "tx_imported_1730174400000_153",
+    "date": "2024-10-29",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 10/29 Kroger #705 1555 Wayne Dayton OH Card",
+    "amount": 818.3
+  },
+  {
+    "id": "tx_imported_1730260800000_154",
+    "date": "2024-10-30",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Krishna Bharadwaj Penumarthi 22543517380",
+    "amount": 266.37
+  },
+  {
+    "id": "tx_imported_1730696400000_155",
+    "date": "2024-11-04",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase 11/02 Speedway 45576 Dayton OH Card 3347",
+    "amount": 814.96
+  },
+  {
+    "id": "tx_imported_1731387600000_156",
+    "date": "2024-11-12",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Neeraj Akhnoor Dayton 22675809335",
+    "amount": 1255.0
+  },
+  {
+    "id": "tx_imported_1731387600000_157",
+    "date": "2024-11-12",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Shivani Dayton Jpm99Aqzgurm",
+    "amount": 217.1
+  },
+  {
+    "id": "tx_imported_1731387600000_158",
+    "date": "2024-11-12",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sarath 22684193221",
+    "amount": 22336.25
+  },
+  {
+    "id": "tx_imported_1732251600000_159",
+    "date": "2024-11-22",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Akhil Deshpande 22804383108",
+    "amount": 20040.0
+  },
+  {
+    "id": "tx_imported_1728273600000_160",
+    "date": "2024-10-07",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Tirth 22309289321",
+    "amount": 417.5
+  },
+  {
+    "id": "tx_imported_1728619200000_161",
+    "date": "2024-10-11",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Tirth Maheshkumar Vaghela 22342133530",
+    "amount": 1369.4
+  },
+  {
+    "id": "tx_imported_1728619200000_162",
+    "date": "2024-10-11",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Rohan Jpm99Ap6Vqfu",
+    "amount": 988.64
+  },
+  {
+    "id": "tx_imported_1728964800000_163",
+    "date": "2024-10-15",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Mohammed Yasiruddin 22371828323",
+    "amount": 1232.46
+  },
+  {
+    "id": "tx_imported_1728964800000_164",
+    "date": "2024-10-15",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Mohammed 22371869137",
+    "amount": 698.06
+  },
+  {
+    "id": "tx_imported_1728964800000_165",
+    "date": "2024-10-15",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Tirth 22378775186",
+    "amount": 417.5
+  },
+  {
+    "id": "tx_imported_1729051200000_166",
+    "date": "2024-10-16",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Arya 22400861583",
+    "amount": 1907.98
+  },
+  {
+    "id": "tx_imported_1729483200000_167",
+    "date": "2024-10-21",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Tirth Maheshkumar Vaghela 22454547590",
+    "amount": 3483.62
+  },
+  {
+    "id": "tx_imported_1729483200000_168",
+    "date": "2024-10-21",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Pranav 22436024929",
+    "amount": 3105.36
+  },
+  {
+    "id": "tx_imported_1729483200000_169",
+    "date": "2024-10-21",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase 10/20 Speedway 09365 Dayton O Dayton OH Card",
+    "amount": 167.83
+  },
+  {
+    "id": "tx_imported_1729483200000_170",
+    "date": "2024-10-21",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Garv Rajput Dayton 22448273890",
+    "amount": 349.87
+  },
+  {
+    "id": "tx_imported_1724299200000_171",
+    "date": "2024-08-22",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Sharat Gajulapalli Bacw6Viahua7",
+    "amount": 16700.0
+  },
+  {
+    "id": "tx_imported_1724385600000_172",
+    "date": "2024-08-23",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Utsav Rameshbhai Patel 21821259586",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1724385600000_173",
+    "date": "2024-08-23",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Utsav 21821233094",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1724644800000_174",
+    "date": "2024-08-26",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Karthik Dasaradhan 21843976353",
+    "amount": 250.5
+  },
+  {
+    "id": "tx_imported_1724644800000_175",
+    "date": "2024-08-26",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 08/24 Kroger #705 1555 Wayne Dayton OH Card",
+    "amount": 1181.53
+  },
+  {
+    "id": "tx_imported_1724644800000_176",
+    "date": "2024-08-26",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 08/24 Kroger #705 1555 Wayne Dayton OH Card",
+    "amount": 855.88
+  },
+  {
+    "id": "tx_imported_1724644800000_177",
+    "date": "2024-08-26",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 08/24 Kroger #705 1555 Wayne Dayton OH Card",
+    "amount": 632.1
+  },
+  {
+    "id": "tx_imported_1724644800000_178",
+    "date": "2024-08-26",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 08/24 Kroger #705 1555 Wayne Dayton OH Card",
+    "amount": 420.0
+  },
+  {
+    "id": "tx_imported_1724644800000_179",
+    "date": "2024-08-26",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Karthik 21844002265",
+    "amount": 250.5
+  },
+  {
+    "id": "tx_imported_1724990400000_180",
+    "date": "2024-08-30",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Utsav Rameshbhai Patel 21895774112",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1724990400000_181",
+    "date": "2024-08-30",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Utsav Rameshbhai Patel 21895799489",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1724990400000_182",
+    "date": "2024-08-30",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Utsav 21895858436",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1724990400000_183",
+    "date": "2024-08-30",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Utsav 21895901734",
+    "amount": 83.5
+  },
+  {
+    "id": "tx_imported_1725336000000_184",
+    "date": "2024-09-03",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Sai 21907677480",
+    "amount": 876.75
+  },
+  {
+    "id": "tx_imported_1725336000000_185",
+    "date": "2024-09-03",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase 08/31 Dollartree New Lexington OH Card 3347",
+    "amount": 224.62
+  },
+  {
+    "id": "tx_imported_1725336000000_186",
+    "date": "2024-09-03",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Tirth 21911466487",
+    "amount": 709.75
+  },
+  {
+    "id": "tx_imported_1725336000000_187",
+    "date": "2024-09-03",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Tirth 21911579512",
+    "amount": 523.54
+  },
+  {
+    "id": "tx_imported_1725595200000_188",
+    "date": "2024-09-06",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Krishna US 21966570959",
+    "amount": 208.75
+  },
+  {
+    "id": "tx_imported_1725595200000_189",
+    "date": "2024-09-06",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Nandita 21966571408",
+    "amount": 399.96
+  },
+  {
+    "id": "tx_imported_1725595200000_190",
+    "date": "2024-09-06",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Tirth 21966675397",
+    "amount": 2854.03
+  },
+  {
+    "id": "tx_imported_1725854400000_191",
+    "date": "2024-09-09",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase 09/09 Masabi_Gdrta 937-425-8300 OH Card 3347",
+    "amount": 417.5
+  },
+  {
+    "id": "tx_imported_1725940800000_192",
+    "date": "2024-09-10",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase 09/08 Shreeji Grocers Centerv Dayton OH Card 3347",
+    "amount": 1000.33
+  },
+  {
+    "id": "tx_imported_1725940800000_193",
+    "date": "2024-09-10",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase 09/08 Shreeji Grocers Centerv Dayton OH Card 3347",
+    "amount": 5005.82
+  },
+  {
+    "id": "tx_imported_1725940800000_194",
+    "date": "2024-09-10",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 09/10 Kroger #705 1555 Wayne Dayton OH Card",
+    "amount": 365.73
+  },
+  {
+    "id": "tx_imported_1725940800000_195",
+    "date": "2024-09-10",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Card Purchase With Pin 09/10 Kroger #705 1555 Wayne Dayton OH Card",
+    "amount": 799.1
+  },
+  {
+    "id": "tx_imported_1726113600000_196",
+    "date": "2024-09-12",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Tirth Maheshkumar Vaghela 22027316104",
+    "amount": 4665.98
+  },
+  {
+    "id": "tx_imported_1726113600000_197",
+    "date": "2024-09-12",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Arya Kinagi 22027254643",
+    "amount": 365.73
+  },
+  {
+    "id": "tx_imported_1726459200000_198",
+    "date": "2024-09-16",
+    "type": "expense",
+    "category": "Other Expense",
+    "description": "[Chase Checking] Zelle Payment To Krishna US 22060752963",
+    "amount": 785.74
+  },
+  {
+    "id": "tx_imported_1726718400000_199",
+    "date": "2024-09-19",
+    "type": "income",
+    "category": "Other Income",
+    "description": "[Chase Checking] Zelle Payment From Tirth Maheshkumar Vaghela 22102235526",
+    "amount": 1624.08
+  }
+]
